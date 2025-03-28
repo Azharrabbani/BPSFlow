@@ -7,6 +7,7 @@ import GuestLayout from '@/Layouts/GuestLayout';
 import GoogleButton  from '@/Components/GoogleButton';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useRoute } from '../../../../vendor/tightenco/ziggy';
+import ApplicationLogo from '@/Components/ApplicationLogo';
 
 export default function Login({ status, canResetPassword }) {
     const route = useRoute();
@@ -34,8 +35,15 @@ export default function Login({ status, canResetPassword }) {
                     {status}
                 </div>
             )}
+            
 
             <form onSubmit={submit}>
+                <div className='flex justify-center my-5'>
+                    <Link href="/login">
+                        <ApplicationLogo className="h-20 w-20 fill-current text-gray-500"/>
+                    </Link>
+                </div>    
+
                 <div>
                     <InputLabel htmlFor="email" value="Email" />
 

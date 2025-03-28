@@ -5,6 +5,7 @@ import TextInput from '@/Components/TextInput';
 import GuestLayout from '@/Layouts/GuestLayout';
 import GoogleButton from '@/Components/GoogleButton';
 import { Head, Link, useForm } from '@inertiajs/react';
+import ApplicationLogo from '@/Components/ApplicationLogo';
 
 export default function Register() {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -27,6 +28,11 @@ export default function Register() {
             <Head title="Register" />
 
             <form onSubmit={submit}>
+                <div className='flex justify-center my-5'>
+                    <Link href="/">
+                        <ApplicationLogo className="h-20 w-20 fill-current text-gray-500"/>
+                    </Link>
+                </div>    
                 <div>
                     <InputLabel htmlFor="name" value="Name" />
 

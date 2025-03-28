@@ -12,20 +12,27 @@ export default function UpdateProfileInformation({
 }) {
     const user = usePage().props.auth.user;
 
-    const { data, setData, patch, errors, processing, recentlySuccessful } =
+    const { data, setData, post, errors, processing, recentlySuccessful } =
         useForm({
             name: user.name,
             email: user.email,
             jabatan: user.jabatan,
             no_pegawai: user.no_pegawai,
             photo: user.photo,
+            oldProfile: user.photo
         });
+        
+        const handleFileChange = (e) => {
+            setData('photo', e.target.files[0]); 
+        };
 
         const submit = (e) => {
             e.preventDefault();
             console.log(data)
-            patch(route('profile.update'));
+            post(route('profile.update'));
         };
+
+    
 
     return (
         <section className={className}>
@@ -39,17 +46,32 @@ export default function UpdateProfileInformation({
                 </p>
             </header>
 
+
             <form onSubmit={submit} className="mt-6 space-y-6" enctype="multipart/form-data">
                 <div>
                     <InputLabel htmlFor="photo" value="Photo" />
-                    <img src={data.photo ? data.photo : 'https://cdn-icons-png.flaticon.com/512/9815/9815472.png'} alt="Photo Profile" width="200" className='mt-5 mb-8' accept="image/png, image/jpeg"/>
+                    <img src={
+                        data.photo instanceof File 
+                        ? URL.createObjectURL(data.photo) 
+                        : data.photo 
+                            ? `/storage/${data.photo}` 
+                            : 'https://cdn-icons-png.flaticon.com/512/9815/9815472.png'
+                    }  alt="Profile" width="150" className='my-5 rounded-full'/> 
 
-                    <input
+                    <input type="hidden" name="oldProfile" value={data.oldProfile} />
+
+                    <label type="button" className="button rounded-lg">
+                      <span className="button__text text-md">Add Photo</span>
+                      <input
                         id="photo"
                         type="file"
-                        className="mt-1 block w-full"
-                        // onChange={(e) => setData('photo', e.target.files[0])}
-                    />
+                        
+                        onChange={handleFileChange}
+                        className="input_file mt-1 block w-full"
+                        />
+                      <span className="button__icon rounded-lg"><svg xmlns="http://www.w3.org/2000/svg" width="24" viewBox="0 0 24 24" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke="currentColor" height="24" fill="none" class="svg"><line y2="19" y1="5" x2="12" x1="12"></line><line y2="12" y1="12" x2="19" x1="5"></line></svg></span>
+                    </label>
+                   
 
                     <InputError className="mt-2" message={errors.photo} />
                 </div>
@@ -80,7 +102,7 @@ export default function UpdateProfileInformation({
                         value={data.email ?? ""}
                         onChange={(e) => setData('email', e.target.value)}
                         required
-                       
+                        readOnly
                     />
 
                     <InputError className="mt-2" message={errors.email} />

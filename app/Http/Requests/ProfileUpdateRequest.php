@@ -28,6 +28,7 @@ class ProfileUpdateRequest extends FormRequest
             'jabatan' => ['string', 'max:255'],
             'no_pegawai' => ['string', 'min:3', 'max:10'],
             'photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg'],
+            
         ];
     }
 }

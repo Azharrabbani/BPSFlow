@@ -30,26 +30,33 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $user = $request->user();
-        $user->fill($request->validated());
-
-        if ($user->isDirty('email')) {
-            $user->email_verified_at = null;
-        }
-
-        if ($request->hasFile('photo')) {
-            $photoPath = $request->file('photo')->store('profile_photos', 'public');
-
-            if ($user->photo) {
-                Storage::disk('public')->delete($user->photo);
+        try {
+            $user = $request->user();
+            $user->fill($request->validated());
+    
+            if ($user->isDirty('email')) {
+                $user->email_verified_at = null;
             }
+    
+            if ($request->hasFile('photo')) {
+    
+                
+                if ($request->oldProfile) {
+                    Storage::delete($request->oldProfile);
+                }
+                
+                $photoPath = $request->file('photo')->store('profile_photos');
+    
+                $user->photo = $photoPath;
+            }
+    
+            $user->save();
+    
+            return Redirect::route('profile.edit')->with('message', 'Profile Updated');
 
-            $user->photo = $photoPath;
+        } catch (\Exception $e) {
+            return Redirect::route('profile.edit')->withErrors(['error' => 'Update Failed']);
         }
-
-        $user->save();
-
-        return Redirect::route('profile.edit');
     }
 
     /**
@@ -62,6 +69,8 @@ class ProfileController extends Controller
         ]);
 
         $user = $request->user();
+        
+        Storage::delete($user->photo);
 
         Auth::logout();
 
@@ -70,6 +79,6 @@ class ProfileController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return Redirect::to('/');
+        return Redirect::to('/login');
     }
 }
