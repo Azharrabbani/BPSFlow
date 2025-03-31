@@ -38,9 +38,10 @@ class ProfileController extends Controller
                 $user->email_verified_at = null;
             }
     
+            // Check if receive photo from FrontEnd
             if ($request->hasFile('photo')) {
     
-                
+                // Delete the old Image in storage
                 if ($request->oldProfile) {
                     Storage::delete($request->oldProfile);
                 }
@@ -69,7 +70,7 @@ class ProfileController extends Controller
         ]);
 
         $user = $request->user();
-        
+
         Storage::delete($user->photo);
 
         Auth::logout();

@@ -57,6 +57,10 @@
 
 .login_register {
   background-image: url("../assets/LoginRegister.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  min-height: 100vh;
 }
 
 .input_file {

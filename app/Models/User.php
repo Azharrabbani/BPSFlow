@@ -63,4 +63,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Inbox::class);
     }
+
+    public function workspaces(): HasMany 
+    {
+        return $this->hasMany(Workspace::class);
+    }
 }
