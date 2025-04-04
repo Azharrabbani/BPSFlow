@@ -1,7 +1,7 @@
 import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { useRef, useState } from 'react';
 
 export default function Dashboard({ workspace }) {
@@ -24,7 +24,6 @@ export default function Dashboard({ workspace }) {
     const handleCancel = () => {
         setDataId(null);
         setTimeout(() => inputWorkspace.current?.focus(), 0);
-
     }
 
     const createWorkspace = (e) => {
@@ -48,11 +47,6 @@ export default function Dashboard({ workspace }) {
 
     return (
         <AuthenticatedLayout
-            header={
-                <h2 className="text-xl font-semibold leading-tight text-gray-800">
-                    Dashboard
-                </h2>
-            }
         >
             <Head title="Dashboard" />
 

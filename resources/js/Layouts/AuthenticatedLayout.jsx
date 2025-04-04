@@ -4,6 +4,15 @@ import NavLink from '@/Components/NavLink';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink';
 import { Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
+import DesktopWindowsOutlinedIcon from '@mui/icons-material/DesktopWindowsOutlined';
+import MoreHorizOutlinedIcon from '@mui/icons-material/MoreHorizOutlined';
+import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
+import PersonAddOutlinedIcon from '@mui/icons-material/PersonAddOutlined';
+import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
+import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
+import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
+import DraftsOutlinedIcon from '@mui/icons-material/DraftsOutlined';
+import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
 
 export default function AuthenticatedLayout({ header, children }) {
     const user = usePage().props.auth.user;
@@ -12,33 +21,28 @@ export default function AuthenticatedLayout({ header, children }) {
         useState(false);
 
     return (
-        <div className="min-h-screen bg-gray-100">
-            <nav className="border-b border-gray-100 bg-white">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div className="flex h-16 justify-between">
-                        <div className="flex">
-                            <div className="flex shrink-0 items-center">
-                                <Link href={route('dashboard')}>
-                                    <img src="https://upload.wikimedia.org/wikipedia/commons/2/28/Lambang_Badan_Pusat_Statistik_%28BPS%29_Indonesia.svg" alt="" width="60"/>
-                                </Link>
-                            </div>
+        <div className="min-h-screen bg-blue-100 ">
+            {/* Sidebar Container */}
+            <nav className="border-b bg-sky-600 fixed h-full w-[300px]">
+                {/* Sidebar Header */}
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-7 py-3">
+                    <div className="header-sidebar flex h-[70px] items-center justify-around gap-0">
+                        <Link href={route('dashboard')} className="bg-white px-[10px] py-[15px] rounded-full w-[70px]">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/2/28/Lambang_Badan_Pusat_Statistik_%28BPS%29_Indonesia.svg" alt="" width="65"/>
+                        </Link>
+                        <p className="text-white text-xl font-bold">Azhar Rabbani</p>
+                                
+                            
+                        
 
-                            <div className="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                        {/* <div className="flex  space-x-8 sm:-my-px sm:ms-10 sm:flex">
                                 <NavLink
                                     href={route('dashboard')}
                                     active={route().current('dashboard')}
                                 >
                                     Dashboard
                                 </NavLink>
-                            </div>
 
-
-                            
-                        </div>
-
-                        <div className="hidden sm:ms-6 sm:flex sm:items-center">
-                            
-                            <div className="relative ms-3">
                                 <Dropdown>
                                     <Dropdown.Trigger>
                                         <span className="inline-flex rounded-md">
@@ -79,6 +83,14 @@ export default function AuthenticatedLayout({ header, children }) {
                                         </Dropdown.Link>
                                     </Dropdown.Content>
                                 </Dropdown>
+                        </div> */}
+
+                        
+
+                        {/* <div className="hidden sm:ms-6 sm:flex sm:items-center">
+                            
+                            <div className="relative ms-3">
+                                
                             </div>
                         </div>
 
@@ -121,9 +133,97 @@ export default function AuthenticatedLayout({ header, children }) {
                                     />
                                 </svg>
                             </button>
+                        </div> */}
+                    </div>
+                </div>
+
+
+
+                {/* Sidebar Menu Space */}
+                <div className="flex h-full bg-gray-100 flex-col">
+                    {/* Sidebar menu */}
+                    <div className="sidebar-menu border-b-2">
+                        <ul className="w-full justify-center">
+                            <li className="py-3 flex hover:bg-sky-400 hover:text-white hover:rounded-sm cursor-pointer">
+                                <div className="icons"><HomeOutlinedIcon/></div>
+                                <div className="menu-item">Home</div>
+                            </li>
+                            <li className="py-3 flex hover:bg-sky-400 hover:text-white hover:rounded-sm cursor-pointer">
+                                <div className="icons"><DraftsOutlinedIcon/></div>
+                                <div className="menu-item">Inbox</div>
+                            </li>
+                            <li className="py-3 flex hover:bg-sky-400 hover:text-white hover:rounded-sm cursor-pointer">
+                                <div className="icons"><PersonOutlineOutlinedIcon/></div>
+                                <div className="menu-item">Profile</div>
+                            </li>                  
+                        </ul>
+                    </div>
+                    
+                    {/* spaces header */}
+                    <div className=" flex px-3 pt-3 justify-between">
+                        <p className="text-sm text-gray-800">Spaces</p>
+
+                        <div className="flex px-[0px] gap-2">
+                            <SearchOutlinedIcon className="w-2 hover:bg-[#19324928] rounded-md cursor-pointer"/>
+                            <MoreHorizOutlinedIcon className="w-2 hover:bg-[#19324928] rounded-md cursor-pointer"/>
+                            <AddOutlinedIcon className="w-2 hover:bg-[#19324928] rounded-md cursor-pointer"/>
+                        </div>
+                    </div>
+                    
+                    {/* Sidebar list menu */}
+                    <div>
+                        <ul className="w-full justify-center">
+                            <li className="py-3 flex hover:bg-sky-400 hover:text-white hover:rounded-sm cursor-pointer">
+                                <div className="icon-menu"><DesktopWindowsOutlinedIcon/></div>
+                                <div className="menu-item">Space1</div>
+                                <div className="flex px-3 gap-2">
+                                    <MoreHorizOutlinedIcon className="w-2 hover:bg-[#19324928] rounded-md cursor-pointer"/>
+                                    <AddOutlinedIcon className="w-2 hover:bg-[#19324928] rounded-md cursor-pointer"/>
+                                </div>
+                            </li>
+                            <li className="py-3 flex hover:bg-sky-400 hover:text-white hover:rounded-sm cursor-pointer">
+                                <div className="icon-menu"><DesktopWindowsOutlinedIcon/></div>
+                                <div className="menu-item">Space2</div>
+                                <div className="flex px-3 gap-2">
+                                    <MoreHorizOutlinedIcon className="w-2 hover:bg-[#19324928] rounded-md cursor-pointer"/>
+                                    <AddOutlinedIcon className="w-2 hover:bg-[#19324928] rounded-md cursor-pointer"/>
+                                </div>
+                            </li>
+                            <li className="py-3 flex hover:bg-sky-400 hover:text-white hover:rounded-sm cursor-pointer">
+                                <div className="icon-menu"><DesktopWindowsOutlinedIcon/></div>
+                                <div className="menu-item">Space3</div>
+                                <div className="flex px-3 gap-2">
+                                    <MoreHorizOutlinedIcon className="w-2 hover:bg-[#19324928] rounded-md cursor-pointer"/>
+                                    <AddOutlinedIcon className="w-2 hover:bg-[#19324928] rounded-md cursor-pointer"/>
+                                </div>
+                            </li>
+                            <li className="py-3 flex hover:bg-sky-400 hover:text-white hover:rounded-sm cursor-pointer">
+                                <div className="icon-menu"><DesktopWindowsOutlinedIcon/></div>
+                                <div className="menu-item">Space4</div>
+                                <div className="flex px-3 gap-2">
+                                    <MoreHorizOutlinedIcon className="w-2 hover:bg-[#19324928] rounded-md cursor-pointer"/>
+                                    <AddOutlinedIcon className="w-2 hover:bg-[#19324928] rounded-md cursor-pointer"/>
+                                </div>
+                            </li>                        
+                        </ul>
+                    </div>
+                    
+
+                    {/* Sidebar bottom menu */}
+                    <div className="absolute bg-blue-300 bottom-5 left-[50%] right-[50%]">
+                        <div className="flex justify-center divide-x-2">
+                            <div className="flex gap-2 hover:bg-sky-400 hover:text-white hover:rounded-lg px-5 p-2 cursor-pointer">
+                                <PersonAddOutlinedIcon/>
+                                <p>Invite</p>
+                            </div>
+                            <div className="flex gap-2 hover:bg-sky-400 hover:text-white hover:rounded-lg px-5 p-2 cursor-pointer">
+                                <LogoutOutlinedIcon/>
+                                <p>Logout</p>
+                            </div>
                         </div>
                     </div>
                 </div>
+                
 
                 <div
                     className={

@@ -1,0 +1,18 @@
+.icons{
+    flex: 10%;
+    display: grid;
+    place-items: center;
+}
+
+.menu-item{
+    flex: 70%;
+    margin-left: -16px;   
+}
+
+.icon-menu{
+    flex: 30%;
+    display: grid;
+    place-items: center;
+}
+
+
