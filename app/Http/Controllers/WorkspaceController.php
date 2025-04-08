@@ -15,9 +15,16 @@ class WorkspaceController extends Controller
     {
         $user = Auth::user();
         
-        $workspace = Workspace::with('users')->where('user_id', $user->id)->get();
+        $workspace = Workspace::with('users')->where('user_id', $user->id)->orderBy('id', 'DESC')->get();
 
         return Inertia::render('Dashboard', [
+            'workspace' => $workspace
+        ]);
+    }
+
+    public function edit (Workspace $workspace) 
+    {
+        return Inertia::render('EditWorkspace', [
             'workspace' => $workspace
         ]);
     }

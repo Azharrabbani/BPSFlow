@@ -46,7 +46,7 @@ export default function Dashboard({ workspace }) {
     }
 
     return (
-        <AuthenticatedLayout
+        <AuthenticatedLayout workspace={workspace}
         >
             <Head title="Dashboard" />
 
@@ -68,7 +68,7 @@ export default function Dashboard({ workspace }) {
                             <form onSubmit={createWorkspace}>
                                 
                                 <label htmlFor="title-workspace">Title</label>
-                                <input type="text" name='name' onChange={(e) => setData('name', e.target.value)} value={data.name} />
+                                <input type="text" name='name' onChange={(e) => setData('name', e.target.value)} />
                                 {errors.name && <p className="error">{errors.name}</p>}
                                 <PrimaryButton>Create</PrimaryButton>
                             </form>

@@ -29,6 +29,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::post('/workspace', [WorkspaceController::class, 'store'])->name('workspace.store');
+    Route::get('/workspace/{workspace}', [WorkspaceController::class, 'edit'])->name('workspace.edit');
     Route::post('/workspace/{workspace}', [WorkspaceController::class, 'update'])->name('workspace.update');
     Route::delete('workspace/{workspace}', [WorkspaceController::class, 'destroy'])->name('workspace.delete');
 });
