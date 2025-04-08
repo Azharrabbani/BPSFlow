@@ -14,17 +14,17 @@ export default function EditWorkspace({ workspace, children }) {
     const user = usePage().props.auth.user;
     
     return (
-        <div className="min-h-screen bg-blue-100 ">
+        <div className="min-h-screen flex bg-blue-100 ">
             <Head title="Settings"/>
             {/* Sidebar Container */}
-            <nav className="border-b bg-sky-600 fixed h-full w-[300px]">
+            <nav className="fixed md:relative z-10 h-full md:h-auto w-[260px] bg-sky-600 ">
                 {/* Sidebar Header */}
                 <Link 
                     href={route('dashboard')}
                     className="flex gap-1 justify-end mr-3 mt-3 cursor-pointer hover:translate-x-[-10px] duration-200"
                 >
                     <ArrowBackIcon className="text-white"/>
-                    <p className="text-white text-sm mt-1">Kembali</p>
+                    <p className="text-white text-sm mt-[3px]">Kembali</p>
 
                 </Link>
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-7 py-3 cursor-default">
@@ -40,12 +40,19 @@ export default function EditWorkspace({ workspace, children }) {
                 <div className="flex h-full bg-gray-100 flex-col">
                     <div className="border-b-2 border-gray-300">
                         <ul className="w-full justify-center">
-                            <li className="py-3 flex hover:bg-sky-400 hover:text-white hover:rounded-sm transition-colors duration-200 cursor-pointer">
+                            <Link 
+                                href={route('workspace.editPage', workspace)}
+                                className={route().current('workspace.editPage', workspace) 
+                                    ? "py-3 flex bg-sky-400 text-white rounded-sm cursor-pointer" 
+                                    : "py-3 flex hover:bg-sky-400 hover:text-white hover:rounded-sm transition-colors duration-200 cursor-pointer"
+                                }>
                                 <div className="flex px-4 gap-2">
                                     <SettingsIcon/>
                                     <p>Settings</p>
                                 </div>
-                            </li>
+                            </Link>
+                                
+
                             <li className="py-3 flex hover:bg-sky-400 hover:text-white hover:rounded-sm transition-colors duration-200 cursor-pointer">
                                 <div className="flex px-4 gap-2">
                                     <PersonIcon/>
@@ -65,7 +72,7 @@ export default function EditWorkspace({ workspace, children }) {
                         <p className="text-sm opacity-50 px-5">{user.name}</p>
                         <ul className="w-full justify-center my-1">
                             <Link 
-                                href={route('profile.edit', user)}
+                                href={route('profile.edit', user, workspace)}
                                 className={route().current('profile.edit', user, workspace) 
                                     ? "py-3 flex bg-sky-400 text-white rounded-sm cursor-pointer" 
                                     : "py-3 flex hover:bg-sky-400 hover:text-white hover:rounded-sm transition-colors duration-200 cursor-pointer"
@@ -105,7 +112,9 @@ export default function EditWorkspace({ workspace, children }) {
             </nav>
 
        
-            {children}
+            <main className="flex-1 ml-[260px] md:ml-0 p-4 md:p-6 overflow-auto">
+                {children}
+            </main>
         </div>
     )
 }

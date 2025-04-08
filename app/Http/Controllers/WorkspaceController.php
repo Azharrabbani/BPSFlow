@@ -29,6 +29,13 @@ class WorkspaceController extends Controller
         ]);
     }
 
+    public function editPage (Workspace $workspace)
+    {
+        return Inertia::render('UpdateWorkspace', [
+            'workspace' => $workspace,
+        ]);
+    }
+
     public function store(WorkspaceRequest $request) 
     {
         $user = $request->validated();
@@ -47,6 +54,13 @@ class WorkspaceController extends Controller
         ]);
 
         return redirect('/dashboard');
+    }
+
+    public function deleteConfirmation(Workspace $workspace)
+    {
+        return Inertia::render('DeleteConfirmPage', [
+            'workspace' => $workspace,
+        ]);
     }
 
     public function destroy(Workspace $workspace)

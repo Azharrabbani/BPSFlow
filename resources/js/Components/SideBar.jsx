@@ -56,9 +56,9 @@ export default function Sidebar( { children, workspace }) {
 
 
     return (
-        <div className="min-h-screen bg-blue-100 ">
+        <div className="min-h-screen flex bg-blue-100 ">
             {/* Sidebar Container */}
-            <nav className="border-b bg-sky-600 fixed h-full w-[300px]">
+            <nav className="fixed md:relative z-10 h-full md:h-auto w-[260px] bg-sky-600 ">
                 {/* Sidebar Header */}
                 <div 
                     className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-7 py-3 hover:cursor-pointer hover:bg-sky-700"
@@ -188,16 +188,6 @@ export default function Sidebar( { children, workspace }) {
                                 <div className="icons"><DraftsOutlinedIcon/></div>
                                 <div className="menu-item">Inbox</div>
                             </Link>
-                            {/* <Link 
-                                href={route('profile.edit', user)}
-                                className={route().current('profile.edit', user, workspace) 
-                                    ? "py-3 flex bg-sky-400 text-white rounded-sm cursor-pointer" 
-                                    : "py-3 flex hover:bg-sky-400 hover:text-white hover:rounded-sm transition-colors duration-200 cursor-pointer"
-                                }
-                            >
-                                <div className="icons"><PersonOutlineOutlinedIcon/></div>
-                                <div className="menu-item">Profile</div>
-                            </Link>                   */}
                         </ul>
                     </div>
                     
@@ -306,7 +296,9 @@ export default function Sidebar( { children, workspace }) {
                 </div>
             </nav>
 
-            {children}
+            <main className="flex-1 ml-[260px] md:ml-0 p-4 md:p-6 overflow-auto">
+                {children}
+            </main>
         </div>
 
     );

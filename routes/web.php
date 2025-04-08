@@ -30,6 +30,8 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/workspace', [WorkspaceController::class, 'store'])->name('workspace.store');
     Route::get('/workspace/{workspace}', [WorkspaceController::class, 'edit'])->name('workspace.edit');
+    Route::get('/workspace/{workspace}/editPage', [WorkspaceController::class, 'editPage'])->name('workspace.editPage');
+    Route::get('/workspace/{workspace}/deleteWorkspace', [WorkspaceController::class, 'deleteConfirmation'])->name('workspace.deletePage');
     Route::post('/workspace/{workspace}', [WorkspaceController::class, 'update'])->name('workspace.update');
     Route::delete('workspace/{workspace}', [WorkspaceController::class, 'destroy'])->name('workspace.delete');
 });
