@@ -15,7 +15,7 @@ class WorkspaceSeeder extends Seeder
     public function run(): void
     {
         Workspace::create([
-            'user_id' => 4,
+            'user_id' => 1,
             'name' => 'workspace azhar',
             'created_at' => new DateTime(now()),
             'updated_at' => new DateTime(now()),

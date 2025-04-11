@@ -20,15 +20,15 @@ import PrimaryButton from './PrimaryButton';
 import Workspace from '@/Components/workspaces/Workspace';
 import CreateWorkspace from '@/Components/workspaces/CreateWorkspace';
 
-export default function Sidebar( { children, workspace }) {
+export default function Sidebar( { children, workspace, activeWorkspace }) {
     const user = usePage().props.auth.user;
 
-    const {data, setData, post, errors, processing, recentlySuccessful} = useForm({
+    const {data, setData, post, put, errors, processing, recentlySuccessful} = useForm({
         name: '',
         user_id: user.id
     });
 
-    const currentWorkspace = workspace[0].name;
+    const currentWorkspace = activeWorkspace.name;
 
     const [open, setOpen] = useState(false);
 
@@ -52,6 +52,13 @@ export default function Sidebar( { children, workspace }) {
                 console.Log('selesai');
             }
         });
+    }
+
+    const switchWorkspace = (e, id) => {
+        e.preventDefault();
+
+        console.log(id);
+        put(route('workspace.switch', id));
     }
 
 
@@ -91,7 +98,7 @@ export default function Sidebar( { children, workspace }) {
                     <div className="border-b-2 border-gray-400">
                         <ul>
                             <Link 
-                                href={route('workspace.edit', workspace[0].id)}
+                                href={route('workspace.edit', activeWorkspace)}
                                 className="py-3 flex hover:bg-sky-400 hover:text-white hover:rounded-sm transition-colors duration-200 cursor-pointer"
                             >
                                 <div className="icons"><SettingsIcon/></div>
@@ -117,14 +124,21 @@ export default function Sidebar( { children, workspace }) {
 
                             <div className="flex flex-col">
                                 {workspace && workspace.length > 0 ? (
-                                    workspace.slice(1).map((data) => (
-                                        <div key={data.id} className="flex items-center px-4 py-4 hover:bg-gray-200 hover:rounded-lg transition-colors duration-200 cursor-pointer">
+                                    workspace.map((data) => (
+                                        
+                                        <button
+                                            key={data.id} 
+                                            onClick={(e) => switchWorkspace(e, data.id)}
+                                            href={route('workspace.switch', data)} 
+                                            className="flex items-center px-4 py-4 hover:bg-gray-200 hover:rounded-lg transition-colors duration-200 cursor-pointer"
+                                        >
                                             <img src="https://upload.wikimedia.org/wikipedia/commons/2/28/Lambang_Badan_Pusat_Statistik_%28BPS%29_Indonesia.svg" alt="" width="50"/>
                                             <div className="ml-3">
-                                                <h2>{data.name}</h2>
+                                                <h2 className="text-start">{data.name}</h2>
                                                 <p className="text-sm opacity-50 mt-[-5px]">2 members</p>
                                             </div>
-                                        </div>
+                                        </button>
+                                        
                                     ))
                                 ): <p></p>}
                                 

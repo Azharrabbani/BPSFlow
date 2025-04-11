@@ -10,6 +10,7 @@ class Workspace extends Model
     protected $fillable = [
         'user_id',
         'name',
+        'status',
     ];
 
     public function users (): BelongsTo

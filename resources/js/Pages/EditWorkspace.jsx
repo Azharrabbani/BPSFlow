@@ -41,8 +41,8 @@ export default function EditWorkspace({ workspace, children }) {
                     <div className="border-b-2 border-gray-300">
                         <ul className="w-full justify-center">
                             <Link 
-                                href={route('workspace.editPage', workspace)}
-                                className={route().current('workspace.editPage', workspace) 
+                                href={route('workspace.edit', workspace)}
+                                className={route().current('workspace.edit', workspace) 
                                     ? "py-3 flex bg-sky-400 text-white rounded-sm cursor-pointer" 
                                     : "py-3 flex hover:bg-sky-400 hover:text-white hover:rounded-sm transition-colors duration-200 cursor-pointer"
                                 }>

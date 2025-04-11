@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\WorkspaceStatus;
 use App\Http\Requests\WorkspaceRequest;
 use App\Models\User;
 use App\Models\Workspace;
@@ -15,32 +16,50 @@ class WorkspaceController extends Controller
     {
         $user = Auth::user();
         
-        $workspace = Workspace::with('users')->where('user_id', $user->id)->orderBy('id', 'DESC')->get();
+        $activeWorkspace = Workspace::with('users')
+            ->where(['user_id' => $user->id, 'status' => WorkspaceStatus::ACTIVE])
+            ->first();
+
+        $workspace = Workspace::with('users')
+            ->where(['user_id' => $user->id, 'status' => WorkspaceStatus::INACTIVE])
+            ->orderBy('id', 'DESC')->get();
 
         return Inertia::render('Dashboard', [
-            'workspace' => $workspace
+            'workspace' => $workspace,
+            'activeWorkspace' => $activeWorkspace,
         ]);
     }
 
     public function edit (Workspace $workspace) 
     {
-        return Inertia::render('EditWorkspace', [
-            'workspace' => $workspace
-        ]);
-    }
-
-    public function editPage (Workspace $workspace)
-    {
         return Inertia::render('UpdateWorkspace', [
-            'workspace' => $workspace,
+            'workspace' => $workspace
         ]);
     }
 
     public function store(WorkspaceRequest $request) 
     {
         $user = $request->validated();
+
+        Workspace::where('status', WorkspaceStatus::ACTIVE)
+            ->update(['status' => WorkspaceStatus::INACTIVE]);
         
         Workspace::create($user);
+
+        return redirect('/dashboard');
+    }
+
+    public function switchWorkspace(Workspace $workspace)
+    {
+        $user = Auth::user();
+
+        Workspace::where('user_id', $user->id)
+            ->where('status', WorkspaceStatus::ACTIVE)
+            ->update(['status' => WorkspaceStatus::INACTIVE]);
+
+        $workspace->update([
+            'status' => WorkspaceStatus::ACTIVE,
+        ]);
 
         return redirect('/dashboard');
     }
@@ -48,12 +67,12 @@ class WorkspaceController extends Controller
     public function update(WorkspaceRequest $request, Workspace $workspace) 
     {
         $data = $request->validated();
-
+    
         $workspace->update([
             'name' => $data['name'],
         ]);
 
-        return redirect('/dashboard');
+        return redirect()->route('workspace.edit', $workspace);
     }
 
     public function deleteConfirmation(Workspace $workspace)

@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\WorkspaceStatus;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -15,6 +16,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained();
             $table->string('name');
+            $table->string('status')->default(WorkspaceStatus::ACTIVE);
             $table->timestamps();
         });
     }

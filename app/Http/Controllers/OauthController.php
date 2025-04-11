@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\WorkspaceStatus;
 use App\Models\User;
+use App\Models\Workspace;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -31,6 +33,14 @@ class OauthController extends Controller
                     'gauth_id' => $user->getId(),
                     'gauth_type'=> 'google',
                     'password' => bcrypt('password'),
+                ]);
+                
+                Workspace::create([
+                    'user_id' => $newUser->id,
+                    'name' => 'BPSFlow',
+                    'status' => WorkspaceStatus::ACTIVE,
+                    'created_at' => date("Y-m-d H:i:s"),
+                    'updated_at' => date("Y-m-d H:i:s"),
                 ]);
 
                 Auth::login($newUser);

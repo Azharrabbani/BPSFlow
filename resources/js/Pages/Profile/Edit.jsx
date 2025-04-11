@@ -14,11 +14,11 @@ export default function Edit({ mustVerifyEmail, status, workspace }) {
     useEffect(() => {
         if (flash?.message) {
             setFlashMsg(flash.message);
-            setTimeout(() => setFlashMsg(null), 5000);
+            setTimeout(() => setFlashMsg(null), 3000);
         }
         if (errors?.error) {
             setErrorMsg(errors.error);
-            setTimeout(() => setErrorMsg(null), 5000);
+            setTimeout(() => setErrorMsg(null), 3000);
         }
     }, [flash, errors]);
     
