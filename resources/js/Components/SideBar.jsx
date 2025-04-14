@@ -35,6 +35,8 @@ export default function Sidebar( { children, workspace, activeWorkspace }) {
     const [openWorkpace, setOpenWorkplace] = useState(false);
 
     const [createWorkspace, setWorkspace] = useState(false);
+    
+    const [search, setSearch] = useState('');
 
     const addWorkspace  = (e) => {
         e.preventDefault();
@@ -49,23 +51,28 @@ export default function Sidebar( { children, workspace, activeWorkspace }) {
             },
 
             onFinish: () => {
-                console.Log('selesai');
+                console.log('selesai');
             }
         });
     }
 
     const switchWorkspace = (e, id) => {
         e.preventDefault();
-
-        console.log(id);
+        setSearch('');
         put(route('workspace.switch', id));
+    }
+
+    const clear = (e) => {
+        e.preventDefault();
+        setOpenWorkplace(false);
+        setSearch('');
     }
 
 
     return (
-        <div className="min-h-screen flex bg-blue-100 ">
+         <div className="h-screen flex bg-blue-100">
             {/* Sidebar Container */}
-            <nav className="fixed md:relative z-10 h-full md:h-auto w-[260px] bg-sky-600 ">
+            <nav className="fixed md:relative z-10 h-screen md:h-full w-[260px] bg-sky-600">
                 {/* Sidebar Header */}
                 <div 
                     className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-7 py-3 hover:cursor-pointer hover:bg-sky-700"
@@ -83,7 +90,7 @@ export default function Sidebar( { children, workspace, activeWorkspace }) {
                 <Workspace open={openWorkpace} onClose={() => setOpenWorkplace(false)}>
                     <div className="my-3">
                         <CloseIcon 
-                            onClick={() => setOpenWorkplace(false)}
+                            onClick={clear}
                             className="absolute right-2 w-2 hover:bg-[#19324928] transition-colors duration-200 rounded-md cursor-pointer"
                         />
                     </div>
@@ -118,14 +125,21 @@ export default function Sidebar( { children, workspace, activeWorkspace }) {
                     <div>
                         <div className="mt-4 px-5">
                             <div className="flex justify-between">
-                                <p className="text-sm opacity-50 cursor-default">Switch Workplaces</p>
-                                <SearchOutlinedIcon className="w-2 hover:bg-[#19324928] transition-colors duration-200 rounded-md cursor-pointer"/>
+                                <input 
+                                    className="text-sm opacity-50 cursor-default border-0 border-b-2 rounded-lg transition duration-300 focus:opacity-100 focus:outline-none" 
+                                    placeHolder="Switch Workspaces"
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                />
+                                <SearchOutlinedIcon className="w-2 mt-2 hover:bg-[#19324928] transition-colors duration-200 rounded-md cursor-pointer"/>
                             </div>
 
-                            <div className="flex flex-col">
+                            <div className="flex mt-3 flex-col max-h-[200px] overflow-y-auto">
                                 {workspace && workspace.length > 0 ? (
-                                    workspace.map((data) => (
-                                        
+                                    workspace.filter((item) => {
+                                        return search.toLowerCase() === '' ? item : item.name.toLowerCase().includes(search)  
+                                    })
+                                    .map((data) => (
                                         <button
                                             key={data.id} 
                                             onClick={(e) => switchWorkspace(e, data.id)}
@@ -137,8 +151,7 @@ export default function Sidebar( { children, workspace, activeWorkspace }) {
                                                 <h2 className="text-start">{data.name}</h2>
                                                 <p className="text-sm opacity-50 mt-[-5px]">2 members</p>
                                             </div>
-                                        </button>
-                                        
+                                        </button>                                        
                                     ))
                                 ): <p></p>}
                                 
@@ -175,7 +188,7 @@ export default function Sidebar( { children, workspace, activeWorkspace }) {
                             <TextInput placeHolder="ex: Tim Pengolahan Data" onChange={(e) => setData('name', e.target.value)} value={data.name}/>
                             {errors.name && <p className="error text-red-500">{errors.name}</p>}
                         </div>
-                        <PrimaryButton className="absolute bottom-3 right-8" disabled={processing}>
+                        <PrimaryButton className="absolute bottom-3 right-8">
                             Create
                         </PrimaryButton>
                     </form>
@@ -310,7 +323,7 @@ export default function Sidebar( { children, workspace, activeWorkspace }) {
                 </div>
             </nav>
 
-            <main className="flex-1 ml-[260px] md:ml-0 p-4 md:p-6 overflow-auto">
+            <main className="flex-1 ml-[260px] md:ml-0 p-4 md:p-6 overflow-auto h-full">
                 {children}
             </main>
         </div>

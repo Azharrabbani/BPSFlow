@@ -43,6 +43,8 @@ class WorkspaceController extends Controller
 
         Workspace::where('status', WorkspaceStatus::ACTIVE)
             ->update(['status' => WorkspaceStatus::INACTIVE]);
+
+        $user['status'] = WorkspaceStatus::ACTIVE;
         
         Workspace::create($user);
 
