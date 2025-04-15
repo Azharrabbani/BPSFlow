@@ -14,7 +14,7 @@ export default function EditWorkspace({ workspace, children }) {
     const user = usePage().props.auth.user;
     
     return (
-        <div className="min-h-screen flex bg-blue-100 ">
+        <div className="h-screen flex bg-blue-100">
             <Head title="Settings"/>
             {/* Sidebar Container */}
             <nav className="fixed md:relative z-10 h-full md:h-auto w-[260px] bg-sky-600 ">
@@ -112,7 +112,7 @@ export default function EditWorkspace({ workspace, children }) {
             </nav>
 
        
-            <main className="flex-1 ml-[260px] md:ml-0 p-4 md:p-6 overflow-auto">
+            <main className="flex-1 ml-[260px] md:ml-0 p-4 md:p-6 overflow-auto h-full">
                 {children}
             </main>
         </div>

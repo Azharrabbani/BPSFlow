@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\WorkspaceMembersStatus;
 use App\Enums\WorkspaceStatus;
 use App\Models\User;
 use App\Models\Workspace;
+use App\Models\Workspace_members;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -35,10 +37,18 @@ class OauthController extends Controller
                     'password' => bcrypt('password'),
                 ]);
                 
-                Workspace::create([
+                $workspace = Workspace::create([
                     'user_id' => $newUser->id,
                     'name' => 'BPSFlow',
                     'status' => WorkspaceStatus::ACTIVE,
+                    'created_at' => date("Y-m-d H:i:s"),
+                    'updated_at' => date("Y-m-d H:i:s"),
+                ]);
+
+                Workspace_members::create([
+                    'user_id' => $newUser->id,
+                    'workspace_id' => $workspace->id,
+                    'status' => WorkspaceMembersStatus::OWNER,
                     'created_at' => date("Y-m-d H:i:s"),
                     'updated_at' => date("Y-m-d H:i:s"),
                 ]);

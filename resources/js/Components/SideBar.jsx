@@ -28,6 +28,9 @@ export default function Sidebar( { children, workspace, activeWorkspace }) {
         user_id: user.id
     });
 
+    console.log(activeWorkspace);
+    console.log(workspace);
+
     const currentWorkspace = activeWorkspace.name;
 
     const [open, setOpen] = useState(false);
@@ -91,7 +94,7 @@ export default function Sidebar( { children, workspace, activeWorkspace }) {
                     <div className="my-3">
                         <CloseIcon 
                             onClick={clear}
-                            className="absolute right-2 w-2 hover:bg-[#19324928] transition-colors duration-200 rounded-md cursor-pointer"
+                            className="absolute right-2 w-2 hover:opacity-50 transition-colors duration-200 rounded-md cursor-pointer"
                         />
                     </div>
                     <div className="flex items-center px-5 py-6">

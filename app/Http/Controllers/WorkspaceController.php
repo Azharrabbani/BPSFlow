@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\WorkspaceMembersStatus;
 use App\Enums\WorkspaceStatus;
 use App\Http\Requests\WorkspaceRequest;
 use App\Models\User;
 use App\Models\Workspace;
+use App\Models\Workspace_members;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -16,11 +18,23 @@ class WorkspaceController extends Controller
     {
         $user = Auth::user();
         
-        $activeWorkspace = Workspace::with('users')
-            ->where(['user_id' => $user->id, 'status' => WorkspaceStatus::ACTIVE])
-            ->first();
+        $activeWorkspace = Workspace::where('user_id', $user->id)
+        ->where('status', WorkspaceStatus::ACTIVE)
+        ->first();
 
-        $workspace = Workspace::with('users')
+        if (!$activeWorkspace) {
+            $firstInactive = Workspace::where('user_id', $user->id)
+                ->where('status', WorkspaceStatus::INACTIVE)
+                ->first();
+        
+            if ($firstInactive) {
+                $firstInactive->update(['status' => WorkspaceStatus::ACTIVE]);
+                $activeWorkspace = $firstInactive;
+            }
+        }
+        
+
+        $workspace = Workspace::find($user->id)
             ->where(['user_id' => $user->id, 'status' => WorkspaceStatus::INACTIVE])
             ->orderBy('id', 'DESC')->get();
 
@@ -46,7 +60,13 @@ class WorkspaceController extends Controller
 
         $user['status'] = WorkspaceStatus::ACTIVE;
         
-        Workspace::create($user);
+        $workspace = Workspace::create($user);
+
+        Workspace_members::create([
+            'user_id' => $user['user_id'],
+            'workspace_id' => $workspace->id,
+            'status' => WorkspaceMembersStatus::OWNER
+        ]);
 
         return redirect('/dashboard');
     }
