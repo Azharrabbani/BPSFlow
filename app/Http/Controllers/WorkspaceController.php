@@ -17,53 +17,100 @@ class WorkspaceController extends Controller
     public function index() 
     {
         $user = Auth::user();
-        
-        $activeWorkspace = Workspace::where('user_id', $user->id)
-        ->where('status', WorkspaceStatus::ACTIVE)
-        ->first();
-
-        if (!$activeWorkspace) {
-            $firstInactive = Workspace::where('user_id', $user->id)
-                ->where('status', WorkspaceStatus::INACTIVE)
+    
+        // Cari workspace aktif dari relasi workspace_members
+        $activeMembership = Workspace_members::where('user_id', $user->id)
+            ->whereHas('workspace', function ($query) {
+                $query->where('status', WorkspaceStatus::ACTIVE);
+            })
+            ->first();
+    
+        $activeWorkspace = null;
+        if ($activeMembership) {
+            $activeWorkspace = $activeMembership->workspace;
+        } else {
+            
+            $firstInactive = Workspace_members::where('user_id', $user->id)
+                ->whereHas('workspace', function ($query) {
+                    $query->where('status', WorkspaceStatus::INACTIVE);
+                })
                 ->first();
-        
+    
             if ($firstInactive) {
-                $firstInactive->update(['status' => WorkspaceStatus::ACTIVE]);
-                $activeWorkspace = $firstInactive;
+                $firstInactive->workspace->update([
+                    'status' => WorkspaceStatus::ACTIVE
+                ]);
+                $activeWorkspace = $firstInactive->workspace;
             }
         }
-        
-
-        $workspace = Workspace::find($user->id)
-            ->where(['user_id' => $user->id, 'status' => WorkspaceStatus::INACTIVE])
-            ->orderBy('id', 'DESC')->get();
-
+    
+        $workspace = Workspace_members::where('user_id', $user->id)
+            ->whereHas('workspace', function ($query) {
+                $query->where('status', WorkspaceStatus::INACTIVE);
+            })
+            ->with('workspace')
+            ->orderBy('id', 'DESC')
+            ->get()
+            ->pluck('workspace');
+    
         return Inertia::render('Dashboard', [
             'workspace' => $workspace,
             'activeWorkspace' => $activeWorkspace,
         ]);
     }
+    
 
     public function edit (Workspace $workspace) 
     {
-        return Inertia::render('UpdateWorkspace', [
+        return Inertia::render('Workspace/UpdateWorkspace', [
             'workspace' => $workspace
         ]);
     }
 
+    public function members()
+    {
+        $user = Auth::user();
+
+        $workspace = Workspace_members::where('user_id', $user->id)
+            ->whereHas('workspace', function($query) {
+                $query->where('status', WorkspaceStatus::ACTIVE);
+            })
+            ->first();
+
+        if (!$workspace) {
+            return redirect()->back()->withErrors(['message' => 'No active workspace found.']);
+        }
+
+        $members = Workspace_members::where('workspace_id', $workspace->workspace_id)
+            ->with('user')
+            ->get();
+
+        return Inertia::render('Workspace/Members', [
+            'workspace' => $workspace->workspace,
+            'members' => $members
+        ]);
+    }
+
+    
+
     public function store(WorkspaceRequest $request) 
     {
-        $user = $request->validated();
+        $user = Auth::user();
+        $currentWorkspace = $request->validated();
 
         Workspace::where('status', WorkspaceStatus::ACTIVE)
             ->update(['status' => WorkspaceStatus::INACTIVE]);
 
-        $user['status'] = WorkspaceStatus::ACTIVE;
+        $currentWorkspace['status'] = WorkspaceStatus::ACTIVE;
         
-        $workspace = Workspace::create($user);
+
+        $workspace = Workspace::create([
+            'name' => $currentWorkspace['name'],
+            'status' => $currentWorkspace['status']
+        ]);
 
         Workspace_members::create([
-            'user_id' => $user['user_id'],
+            'user_id' => $user->id,
             'workspace_id' => $workspace->id,
             'status' => WorkspaceMembersStatus::OWNER
         ]);
@@ -75,8 +122,10 @@ class WorkspaceController extends Controller
     {
         $user = Auth::user();
 
-        Workspace::where('user_id', $user->id)
-            ->where('status', WorkspaceStatus::ACTIVE)
+        Workspace::where('status', WorkspaceStatus::ACTIVE)
+            ->whereHas('members', function ($query) use ($user) {
+                $query->where('user_id', $user->id);
+            })
             ->update(['status' => WorkspaceStatus::INACTIVE]);
 
         $workspace->update([
@@ -99,7 +148,7 @@ class WorkspaceController extends Controller
 
     public function deleteConfirmation(Workspace $workspace)
     {
-        return Inertia::render('DeleteConfirmPage', [
+        return Inertia::render('Workspace/DeleteConfirmPage', [
             'workspace' => $workspace,
         ]);
     }

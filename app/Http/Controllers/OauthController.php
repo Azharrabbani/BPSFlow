@@ -38,7 +38,6 @@ class OauthController extends Controller
                 ]);
                 
                 $workspace = Workspace::create([
-                    'user_id' => $newUser->id,
                     'name' => 'BPSFlow',
                     'status' => WorkspaceStatus::ACTIVE,
                     'created_at' => date("Y-m-d H:i:s"),

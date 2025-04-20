@@ -4,7 +4,7 @@ import DeleteUserForm from './Partials/DeleteUserForm';
 import UpdatePasswordForm from './Partials/UpdatePasswordForm';
 import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm';
 import {useEffect ,useState } from 'react';
-import EditWorkspace from '../EditWorkspace';
+import EditWorkspace from '../Workspace/EditWorkspace';
 
 export default function Edit({ mustVerifyEmail, status, workspace }) {
     const { flash, errors } = usePage().props;

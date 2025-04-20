@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\WorkspaceStatus;
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Models\Workspace;
+use App\Models\Workspace_members;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -21,7 +23,11 @@ class ProfileController extends Controller
     public function edit(Request $request): Response
     {
         $user = Auth::user();
-        $workspace = Workspace::with('users')->where('user_id', $user->id)->orderBy('id', 'DESC')->get();
+        $workspace = Workspace_members::where('user_id', $user->id)
+            ->whereHas('workspace', function($query) {
+                $query->where('status', WorkspaceStatus::ACTIVE);
+            })
+            ->first();
         return Inertia::render('Profile/Edit', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
             'status' => session('status'),

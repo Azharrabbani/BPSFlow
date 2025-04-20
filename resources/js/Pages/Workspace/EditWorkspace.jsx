@@ -53,12 +53,17 @@ export default function EditWorkspace({ workspace, children }) {
                             </Link>
                                 
 
-                            <li className="py-3 flex hover:bg-sky-400 hover:text-white hover:rounded-sm transition-colors duration-200 cursor-pointer">
+                            <Link 
+                                href={route('workspace.members', workspace)}
+                                className={route().current('workspace.members')
+                                    ? "py-3 flex bg-sky-400 text-white rounded-sm cursor-pointer"
+                                    : "py-3 flex hover:bg-sky-400 hover:text-white hover:rounded-sm transition-colors duration-200 cursor-pointer"
+                                }>
                                 <div className="flex px-4 gap-2">
                                     <PersonIcon/>
                                     <p>People</p>
                                 </div>
-                            </li>         
+                            </Link>         
                             <li className="py-3 flex hover:bg-sky-400 hover:text-white hover:rounded-sm transition-colors duration-200 cursor-pointer">
                                 <div className="flex px-4 gap-2">
                                     <SatelliteAltIcon/>
@@ -72,8 +77,8 @@ export default function EditWorkspace({ workspace, children }) {
                         <p className="text-sm opacity-50 px-5">{user.name}</p>
                         <ul className="w-full justify-center my-1">
                             <Link 
-                                href={route('profile.edit', user, workspace)}
-                                className={route().current('profile.edit', user, workspace) 
+                                href={route('profile.edit')}
+                                className={route().current('profile.edit') 
                                     ? "py-3 flex bg-sky-400 text-white rounded-sm cursor-pointer" 
                                     : "py-3 flex hover:bg-sky-400 hover:text-white hover:rounded-sm transition-colors duration-200 cursor-pointer"
                                 }>

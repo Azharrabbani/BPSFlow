@@ -116,7 +116,7 @@ export default function Sidebar( { children, workspace, activeWorkspace }) {
                             </Link>
 
                             <Link 
-                                
+                                href={route('workspace.members', activeWorkspace)}
                                 className="py-3 flex hover:bg-sky-400 hover:text-white hover:rounded-sm transition-colors duration-200 cursor-pointer"
                             >
                                 <div className="icons"><ManageAccountsIcon/></div>

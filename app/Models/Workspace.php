@@ -4,11 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Workspace extends Model
 {
     protected $fillable = [
-        'user_id',
         'name',
         'status',
     ];
@@ -16,5 +16,10 @@ class Workspace extends Model
     public function users (): BelongsToMany
     {
         return $this->belongsToMany(User::class);
+    }
+
+    public function members(): HasMany
+    {
+        return $this->hasMany(Workspace_members::class, 'workspace_id');
     }
 }

@@ -23,7 +23,6 @@ class WorkspaceRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max: 255'],
-            'user_id' => ['required', 'integer'],
             'status' => ['string'],
         ];
     }

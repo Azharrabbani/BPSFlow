@@ -1,4 +1,4 @@
-import EditWorkspace from "@/Pages/EditWorkspace";
+import EditWorkspace from "@/Pages/Workspace/EditWorkspace";
 import { Head, Link, useForm, usePage } from "@inertiajs/react";
 import { useRef, useState } from "react";
 
