@@ -1,5 +1,6 @@
 import { useState } from "react";
 import EditWorkspace from "./EditWorkspace";
+import Select from  "react-select";
 
 import PersonAddAltIcon from '@mui/icons-material/PersonAddAlt';
 import InviteMember from "@/Components/workspaces/InviteMember";
@@ -7,10 +8,69 @@ import CloseIcon from '@mui/icons-material/Close';
 import TextInput from "@/Components/TextInput";
 import PrimaryButton from "@/Components/PrimaryButton";
 import SettingsIcon from '@mui/icons-material/Settings';
+import { Description } from "@headlessui/react";
+import { useForm } from "@inertiajs/react";
 
+const roles = [
+    { value: 'admin', label: 'Admin - Dapat mengelola anggota & workspace' },
+    { value: 'member', label: 'Member - Hanya bisa akses workspace saja' }
+]
+
+const customLayout = {
+    control: (provided) => ({
+        ...provided,
+        backgroundColor: 'transparent',
+        border: 'none',
+        boxShadow: 'none',
+        paddingLeft: '0px',
+        fontWeight: 'bold',
+        color: '#000',
+        minHeight: 'initial',
+        cursor: 'pointer',
+    }),
+    option: (provided, state) => ({
+        ...provided,
+        color: state.isSelected ? "white" : "black",
+        backgroundColor: state.isSelected ? "#38c1fc" : "white",
+        cursor: 'pointer',
+    }),
+    dropdownIndicator: (provided) => ({
+        ...provided,
+        padding: 0,
+    }),
+    indicatorSeparator: () => ({
+        display: 'none',
+    }),
+    singleValue: (provided) => ({
+        ...provided,
+        color: 'black',
+    }),
+};
 
 export default function Members( { workspace, members } ) {
+    const {data, setData, get, errors, processing, reset} = useForm({
+        email: '',
+        role: 'member',
+        workspace: workspace.id,
+    })
+
     const [open, setOpen] = useState(false);
+
+    const sendInvite = (e) => {
+        e.preventDefault();
+        
+        console.log(data);
+        get(route('invitation.send'), {
+            onSuccess: () => {
+                reset();
+                setOpen(false);
+            },
+            onError: () => {
+                console.log('Gagal', errors.name);
+            }
+
+        })
+    }
 
     return(
         <EditWorkspace workspace={workspace}>
@@ -46,36 +106,62 @@ export default function Members( { workspace, members } ) {
                     />
                     
 
-                <button 
-                    onClick={() => setOpen(true)}
-                    className="flex items-center bg-sky-500 hover:bg-sky-600 rounded-lg text-white font-semibold overflow-hidden transition-colors duration-200"
-                >
-                    <div className="flex items-center gap-2 px-3 py-2">
-                      <PersonAddAltIcon className="w-5 h-5"/>
-                      <div className="w-px h-5 bg-white opacity-50"/>
-                    </div>
-                    <span className="px-3 py-2">Invite</span>
-                </button>
-
-                <InviteMember open={open} onClose={() => setOpen(false) }>
-                    <CloseIcon className='absolute right-3 top-4 cursor-pointer hover:opacity-50' onClick={() => setOpen(false)}/>
-
-                    <h2 className="text-xl pb-1">Undang Anggota</h2>
-                    <p className="opacity-50">
-                        Ajak anggota tim atau unit kerja untuk bergabung ke workspace agar kolaborasi dan manajemen proyek berjalan lebih efektif.
-                    </p>
-
-                    <form>
-                        <div className="flex flex-col mt-4">
-                            <label htmlFor="spaceInput" className="mb-1">Email</label>
-                            <TextInput placeHolder="ex: bps@gmail.com"/>
+                    <button 
+                        onClick={() => setOpen(true)}
+                        className="flex items-center bg-sky-500 hover:bg-sky-600 rounded-lg text-white font-semibold overflow-hidden transition-colors duration-200"
+                    >
+                        <div className="flex items-center gap-2 px-3 py-2">
+                        <PersonAddAltIcon className="w-5 h-5"/>
+                        <div className="w-px h-5 bg-white opacity-50"/>
                         </div>
-                        <PrimaryButton className="absolute bottom-6 right-8">
-                            Invite
-                        </PrimaryButton>
-                    </form>
-                </InviteMember>
+                        <span className="px-3 py-2">Invite</span>
+                    </button>
 
+                    <InviteMember open={open} onClose={() => setOpen(false) }>
+                        <CloseIcon className='absolute right-3 top-4 cursor-pointer hover:opacity-50' onClick={() => setOpen(false)}/>
+
+                        <h2 className="text-xl pb-1">Undang Anggota</h2>
+                        <p className="opacity-50">
+                            Ajak anggota tim atau unit kerja untuk bergabung ke workspace agar kolaborasi dan manajemen proyek berjalan lebih efektif.
+                        </p>
+
+                        <form onSubmit={sendInvite}>
+                            <div className="flex flex-col mt-4">
+                                <label htmlFor="spaceInput" className="mb-1">Email</label>
+                                <TextInput 
+                                    value={data.email}
+                                    onChange={e => setData('email', e.target.value)}
+                                    type="email"
+                                    placeHolder="ex: bps@gmail.com"
+                                />
+                                {errors.email && <p className="text-red-600">{errors.email}</p>}
+                            </div>
+
+                            <div className="mt-3">
+                                <h2 className="opacity-50">Invite sebagai</h2>
+                                <div className="flex items-center w-ful py-5 px-3 rounded-lg space-x-2">
+                                    <span className="bg-sky-400 p-3 text-white rounded-md">
+                                        <PersonAddAltIcon/>
+                                    </span>
+                                    <Select 
+                                        name="role" 
+                                        id="role" 
+                                        className="w-96 border-0"
+                                        options={roles}
+                                        defaultValue={roles[1]}
+                                        onChange={(selected) => setData('role', selected.value)}
+                                        styles={customLayout}
+                                    />
+                                    
+                                </div>
+                            </div>
+                            <div className="flex justify-end">
+                                <PrimaryButton>
+                                    Invite
+                                </PrimaryButton>
+                            </div>
+                        </form>
+                    </InviteMember>
 
                 </div>
                 
@@ -104,8 +190,12 @@ export default function Members( { workspace, members } ) {
                                 :  member.user.photo
                                 ? `/storage/${ member.user.photo}` 
                                 : 'https://cdn-icons-png.flaticon.com/512/9815/9815472.png'
-                            }  alt="Profile" width="45" className='my-5 rounded-full'/> 
-                                <td className="p-3 text-sm text-gray-700 whitespace-nowrap cursor-default">{member.user.name}</td>
+                            }  alt="Profile" width="45" className='my-5 rounded-full'/>
+                                {member.user.name.length > 0 
+                                    ? <td className="p-3 text-sm text-gray-700 whitespace-nowrap cursor-default">{member.user.name}</td>
+                                    :<td className="p-3 text-sm text-gray-700 whitespace-nowrap cursor-default">karyawan</td>
+                                } 
+                                
                             </div>
                             <td className="p-3 text-sm font-bold text-blue-500 whitespace-nowrap cursor-default">{member.user.email}</td>
                             <td className="p-3 text-sm text-gray-700 whitespace-nowrap cursor-default">{member.user.jabatan}</td>

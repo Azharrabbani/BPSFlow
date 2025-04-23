@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Enums\WorkspaceMembersStatus;
 use App\Enums\WorkspaceStatus;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Workspace;
+use App\Models\Workspace_members;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -46,10 +48,17 @@ class RegisteredUserController extends Controller
 
         event(new Registered($user));
 
-        Workspace::create([
-            'user_id' => $user->id,
+        $workspace = Workspace::create([
             'name' => 'BPSFlow',
             'status' => WorkspaceStatus::ACTIVE,
+            'created_at' => date("Y-m-d H:i:s"),
+            'updated_at' => date("Y-m-d H:i:s"),
+        ]);
+
+        Workspace_members::create([
+            'user_id' => $user->id,
+            'workspace_id' => $workspace->id,
+            'status' => WorkspaceMembersStatus::OWNER,
             'created_at' => date("Y-m-d H:i:s"),
             'updated_at' => date("Y-m-d H:i:s"),
         ]);

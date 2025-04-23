@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use App\Enums\WorkspaceMembersStatus;
 use App\Enums\WorkspaceStatus;
 use App\Http\Requests\WorkspaceRequest;
+use App\Mail\WorkspaceInvitation;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Models\Workspace_members;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 
 class WorkspaceController extends Controller
@@ -91,7 +93,52 @@ class WorkspaceController extends Controller
         ]);
     }
 
+    public function sendInvitation(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'role' => 'required|in:admin,member',
+            'workspace' => 'required|exists:workspaces,id',
+        ]);
     
+        $user = $request->email;
+        $workspace = Workspace::findOrFail($request->workspace);
+        $inviter = Auth::user();
+
+        Mail::to($user)->send(new WorkspaceInvitation($workspace, $inviter, $user));
+        return redirect()->route('workspace.members', ['workspace' => $workspace->id]);
+    }
+
+    public function invite(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'role' => 'required|in:admin,member',
+            'workspace' => 'required|exists:workspaces,id',
+        ]);
+    
+        $user = User::where('email', $request->email)->first();
+    
+        $user_exist = Workspace_members::where('user_id', $user->id)->first();
+
+        if($user_exist) {
+            return back()->withErrors(['user' => 'User sudah menjadi member atau sudah di undang']);
+        }
+
+        if (!$user) {
+            return back()->withErrors(['email' => 'User dengan email ini tidak ditemukan.']);
+        }
+    
+        $workspace = Workspace::find($request->workspace);
+    
+        Workspace_members::create([
+            'user_id' => $user->id,
+            'workspace_id' => $workspace->id,
+            'status' => $request->role, 
+        ]);
+    
+        return redirect()->route('workspace.members', ['workspace' => $workspace->id]);
+    }
 
     public function store(WorkspaceRequest $request) 
     {

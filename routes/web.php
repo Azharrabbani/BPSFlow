@@ -24,17 +24,22 @@ Route::get('oauth/google/callback', [OauthController::class, 'handleProviderCall
 Route::get('/dashboard', [WorkspaceController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+    // Profile route
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    // Workspace route
     Route::post('/workspace', [WorkspaceController::class, 'store'])->name('workspace.store');
     Route::get('/workspace/{workspace}', [WorkspaceController::class, 'edit'])->name('workspace.edit');
     Route::get('/workspace/{workspace}/members', [WorkspaceController::class, 'members'])->name('workspace.members');
+    Route::get('/invite', [WorkspaceController::class, 'sendInvitation'])->name('invitation.send');
+    Route::get('/invite/{workspace}', [WorkspaceController::class, 'invite'])->name('invitation.accept');
     Route::get('/workspace/{workspace}/deleteWorkspace', [WorkspaceController::class, 'deleteConfirmation'])->name('workspace.deletePage');
     Route::put('/workspace/{workspace}/switch', [WorkspaceController::class, 'switchWorkspace'])->name('workspace.switch');
     Route::put('/workspace/{workspace}', [WorkspaceController::class, 'update'])->name('workspace.update');
     Route::delete('workspace/{workspace}', [WorkspaceController::class, 'destroy'])->name('workspace.delete');
+
 });
 
 require __DIR__.'/auth.php';
