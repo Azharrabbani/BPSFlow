@@ -3,6 +3,7 @@
 use App\Http\Controllers\OauthController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\WorkspaceController;
+use App\Http\Controllers\InboxController;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,7 +20,7 @@ Route::get('/', function () {
 });
 
 Route::get('oauth/google', [OauthController::class, 'redirectToProvider'])->name('oauth.google');
-Route::get('oauth/google/callback', [OauthController::class, 'handleProviderCallback'])->name('oauth.google.callback');
+Route::get('oauth/google/callback', [OauthController::class, 'handleProviderCallback'])->name('/oauth.google.callback');
 
 Route::get('/dashboard', [WorkspaceController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
 
@@ -39,6 +40,9 @@ Route::middleware('auth')->group(function () {
     Route::put('/workspace/{workspace}/switch', [WorkspaceController::class, 'switchWorkspace'])->name('workspace.switch');
     Route::put('/workspace/{workspace}', [WorkspaceController::class, 'update'])->name('workspace.update');
     Route::delete('workspace/{workspace}', [WorkspaceController::class, 'destroy'])->name('workspace.delete');
+
+    // Inbox Route
+    Route::get('/inbox', [InboxController::class, 'index'])->name('inbox');
 
 });
 

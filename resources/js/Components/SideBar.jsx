@@ -212,8 +212,12 @@ export default function Sidebar( { children, workspace, activeWorkspace }) {
                                 <div className="icons"><HomeOutlinedIcon/></div>
                                 <div className="menu-item">Home</div>
                             </Link>
-                            <Link 
-                                className="py-3 flex hover:bg-sky-400 hover:text-white hover:rounded-sm transition-colors duration-200 cursor-pointer"
+                            <Link
+                                href={route('inbox')}
+                                className={route().current('inbox') 
+                                    ? "py-3 flex bg-sky-400 text-white rounded-sm cursor-pointer" 
+                                    : "py-3 flex hover:bg-sky-400 hover:text-white hover:rounded-sm transition-colors duration-200 cursor-pointer"
+                                }
                             >
                                 <div className="icons"><DraftsOutlinedIcon/></div>
                                 <div className="menu-item">Inbox</div>
