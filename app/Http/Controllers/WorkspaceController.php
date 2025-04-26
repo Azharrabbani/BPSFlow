@@ -4,14 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Enums\WorkspaceMembersStatus;
 use App\Enums\WorkspaceStatus;
+use App\Http\Requests\WorkspaceMemberRequest;
 use App\Http\Requests\WorkspaceRequest;
 use App\Mail\WorkspaceInvitation;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Models\Workspace_members;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class WorkspaceController extends Controller
@@ -20,12 +23,15 @@ class WorkspaceController extends Controller
     {
         $user = Auth::user();
     
-        // Cari workspace aktif dari relasi workspace_members
         $activeMembership = Workspace_members::where('user_id', $user->id)
             ->whereHas('workspace', function ($query) {
                 $query->where('status', WorkspaceStatus::ACTIVE);
             })
             ->first();
+        
+        // Mendapatkan member workspace yang sedang active
+        $activeMembers = Workspace_members::where('workspace_id', $activeMembership->workspace_id)->count();
+        $activeMembersStatus = Workspace_members::where('workspace_id', $activeMembership->workspace_id)->get();
     
         $activeWorkspace = null;
         if ($activeMembership) {
@@ -54,9 +60,11 @@ class WorkspaceController extends Controller
             ->orderBy('id', 'DESC')
             ->get()
             ->pluck('workspace');
-    
+        
         return Inertia::render('Dashboard', [
             'workspace' => $workspace,
+            'activeMembers' => $activeMembers,
+            'activeMembersStatus' => $activeMembersStatus,
             'activeWorkspace' => $activeWorkspace,
         ]);
     }
@@ -64,80 +72,75 @@ class WorkspaceController extends Controller
 
     public function edit (Workspace $workspace) 
     {
+        $activeMembersStatus = Workspace_members::where('workspace_id', $workspace->id)->get();
+
+        // dd($activeMembersStatus);
+
         return Inertia::render('Workspace/UpdateWorkspace', [
-            'workspace' => $workspace
+            'workspace' => $workspace,
+            'activeMembersStatus' => $activeMembersStatus
         ]);
     }
-
-    public function members()
-    {
-        $user = Auth::user();
-
-        $workspace = Workspace_members::where('user_id', $user->id)
-            ->whereHas('workspace', function($query) {
-                $query->where('status', WorkspaceStatus::ACTIVE);
-            })
-            ->first();
-
-        if (!$workspace) {
-            return redirect()->back()->withErrors(['message' => 'No active workspace found.']);
-        }
-
-        $members = Workspace_members::where('workspace_id', $workspace->workspace_id)
-            ->with('user')
-            ->get();
-
-        return Inertia::render('Workspace/Members', [
-            'workspace' => $workspace->workspace,
-            'members' => $members
-        ]);
-    }
-
-    public function sendInvitation(Request $request)
-    {
-        $request->validate([
-            'email' => 'required|email',
-            'role' => 'required|in:admin,member',
-            'workspace' => 'required|exists:workspaces,id',
-        ]);
     
-        $user = $request->email;
-        $workspace = Workspace::findOrFail($request->workspace);
-        $inviter = Auth::user();
 
-        Mail::to($user)->send(new WorkspaceInvitation($workspace, $inviter, $user));
-        return redirect()->route('workspace.members', ['workspace' => $workspace->id]);
-    }
+    // public function sendInvitation(Request $request)
+    // {
+    //     $request->validate([
+    //         'email' => 'required|email',
+    //         'role' => 'required|in:admin,member',
+    //         'workspace' => 'required|exists:workspaces,id',
+    //     ]);
+    
+    //     $user = $request->email;
+    //     $workspace = Workspace::findOrFail($request->workspace);
+    //     $inviter = Auth::user();
+
+    //     Mail::to($user)->send(new WorkspaceInvitation($workspace, $inviter, $user));
+    //     return redirect()->route('workspace.members', ['workspace' => $workspace->id]);
+    // }
 
     public function invite(Request $request)
     {
-        $request->validate([
-            'email' => 'required|email',
-            'role' => 'required|in:admin,member',
-            'workspace' => 'required|exists:workspaces,id',
-        ]);
+        try{
+            $request->validate([
+                'email' => 'required|email',
+                'role' => 'required|in:admin,member',
+                'workspace' => 'required|exists:workspaces,id',
+            ]);
+        
+            $user = User::where('email', $request->email)->first();
+        
+            if (!$user) {
+                throw ValidationException::withMessages([
+                    'email' => 'User dengan email ini tidak ditemukan.',
+                ]);
+            }
     
-        $user = User::where('email', $request->email)->first();
+            $user_exist = Workspace_members::where(['user_id' => $user->id, 'workspace_id' => $request->workspace])->first();
+            
+            if ($user_exist) {
+                throw ValidationException::withMessages([
+                    'user' => 'User sudah menjadi member atau sudah di undang.',
+                ]);
+            }
     
-        $user_exist = Workspace_members::where('user_id', $user->id)->first();
-
-        if($user_exist) {
-            return back()->withErrors(['user' => 'User sudah menjadi member atau sudah di undang']);
+            Workspace_members::create([
+                'user_id' => $user->id,
+                'workspace_id' => $request->workspace,
+                'status' => $request->role, 
+            ]);
+    
+            
+            Workspace::where('status', WorkspaceStatus::ACTIVE)
+                ->where('id', '!=', $request->workspace)
+                ->update(['status' => WorkspaceStatus::INACTIVE]);
+            
+        
+            return redirect()->route('workspace.members', ['workspace' => $request->workspace]);
+        } catch(Exception $e) {
+            dd($e->getMessage());
         }
-
-        if (!$user) {
-            return back()->withErrors(['email' => 'User dengan email ini tidak ditemukan.']);
-        }
-    
-        $workspace = Workspace::find($request->workspace);
-    
-        Workspace_members::create([
-            'user_id' => $user->id,
-            'workspace_id' => $workspace->id,
-            'status' => $request->role, 
-        ]);
-    
-        return redirect()->route('workspace.members', ['workspace' => $workspace->id]);
+        
     }
 
     public function store(WorkspaceRequest $request) 

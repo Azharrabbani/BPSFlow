@@ -10,9 +10,11 @@ import DraftsOutlinedIcon from '@mui/icons-material/DraftsOutlined';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 
 
-export default function EditWorkspace({ workspace, children }) {
+export default function EditWorkspace({ workspace, children, activeMembersStatus }) {
     const user = usePage().props.auth.user;
-    
+
+     
+
     return (
         <div className="h-screen flex bg-blue-100">
             <Head title="Settings"/>

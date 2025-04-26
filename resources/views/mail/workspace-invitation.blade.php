@@ -1,15 +1,15 @@
 <div>
     # Undangan Bergabung ke Workspace "{{ $workspace->name }}"
 
-    Hai {{ $user->name }},
+    <h1>Hai {{ $user->name }},</h1>
     
-    {{ $inviter }} mengundang Anda untuk bergabung ke workspace **"{{ $workspace->name }}"**.
+    <p>{{ $inviter }} mengundang Anda untuk bergabung ke workspace **"{{ $workspace->name }}"**.</p>
     
-    Klik tombol di bawah ini untuk menerima undangan dan mulai berkolaborasi bersama tim:
+    <P>Klik tombol di bawah ini untuk menerima undangan dan mulai berkolaborasi bersama tim:</p>
     
-    <x-mail::button :url="url('/invite/' . $workspace->id)">
-    Terima Undangan
-    </x-mail::button>
+        <a href="{{ route('invitation.accept', $workspace) }}">
+            <button>Terima Undangan</button>
+        </a>
     
     Jika Anda tidak mengenal undangan ini, Anda dapat mengabaikan email ini.
     

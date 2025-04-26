@@ -1,17 +1,3 @@
-import DesktopWindowsOutlinedIcon from '@mui/icons-material/DesktopWindowsOutlined';
-import MoreHorizOutlinedIcon from '@mui/icons-material/MoreHorizOutlined';
-import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
-import PersonAddOutlinedIcon from '@mui/icons-material/PersonAddOutlined';
-import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
-import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
-import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
-import DraftsOutlinedIcon from '@mui/icons-material/DraftsOutlined';
-import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
-import CloseIcon from '@mui/icons-material/Close';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import SettingsIcon from '@mui/icons-material/Settings';
-import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
-
 import { useState } from 'react';
 import { Link, useForm, usePage } from '@inertiajs/react';
 import ModalSpace from '@/Components/ModalSpace';
@@ -20,11 +6,33 @@ import PrimaryButton from './PrimaryButton';
 import Workspace from '@/Components/workspaces/Workspace';
 import CreateWorkspace from '@/Components/workspaces/CreateWorkspace';
 
-export default function Sidebar( { children, workspace, activeWorkspace }) {
+
+// icons
+import DesktopWindowsOutlinedIcon from '@mui/icons-material/DesktopWindowsOutlined';
+import MoreHorizOutlinedIcon from '@mui/icons-material/MoreHorizOutlined';
+import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
+import PersonAddOutlinedIcon from '@mui/icons-material/PersonAddOutlined';
+import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
+import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
+import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
+import DraftsOutlinedIcon from '@mui/icons-material/DraftsOutlined';
+import CloseIcon from '@mui/icons-material/Close';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import SettingsIcon from '@mui/icons-material/Settings';
+import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
+import PersonAddAltIcon from '@mui/icons-material/PersonAddAlt';
+
+
+export default function Sidebar( { children, workspace, activeWorkspace, activeMembers, activeMembersStatus }) {
     const user = usePage().props.auth.user;
+
+    const currentUserStatus = activeMembersStatus.find(m=> m.user_id === user.id).status;
 
     const {data, setData, post, put, errors, processing, recentlySuccessful} = useForm({
         name: '',
+        email: '',
+        role: 'member',
+        workspace: workspace.id,
         user_id: user.id
     });
 
@@ -56,6 +64,21 @@ export default function Sidebar( { children, workspace, activeWorkspace }) {
             onFinish: () => {
                 console.log('selesai');
             }
+        });
+    }
+
+    const invite = (e, id) => {
+        e.preventDefault();
+        
+        post(route('invitation.accept', id), {
+            onSuccess: () => {
+                reset();
+                setInviteModal(false);
+            },
+            onError: () => {
+                console.log('Gagal', errors);
+            }
+
         });
     }
 
@@ -101,28 +124,43 @@ export default function Sidebar( { children, workspace, activeWorkspace }) {
                         <img src="https://upload.wikimedia.org/wikipedia/commons/2/28/Lambang_Badan_Pusat_Statistik_%28BPS%29_Indonesia.svg" alt="" width="50"/>
                         <div className="ml-3 cursor-default">
                             <h2>{currentWorkspace}</h2>
-                            <p className="text-sm opacity-50 mt-[-5px]">2 members</p>
+                            <p className="text-sm opacity-50 mt-[-5px]">{activeMembers} members</p>
                         </div>
                     </div>
 
                     <div className="border-b-2 border-gray-400">
-                        <ul>
-                            <Link 
-                                href={route('workspace.edit', activeWorkspace)}
-                                className="py-3 flex hover:bg-sky-400 hover:text-white hover:rounded-sm transition-colors duration-200 cursor-pointer"
-                            >
-                                <div className="icons"><SettingsIcon/></div>
-                                <div className="menu-item">Settings</div>
-                            </Link>
 
-                            <Link 
-                                href={route('workspace.members', activeWorkspace)}
-                                className="py-3 flex hover:bg-sky-400 hover:text-white hover:rounded-sm transition-colors duration-200 cursor-pointer"
-                            >
-                                <div className="icons"><ManageAccountsIcon/></div>
-                                <div className="menu-item">Manage Users</div>
-                            </Link>
-                        </ul>
+                        {currentUserStatus === 'owner' 
+                            ? 
+                                <div>
+                                    <Link 
+                                        href={route('workspace.edit', activeWorkspace)}
+                                        className="py-3 flex hover:bg-sky-400 hover:text-white hover:rounded-sm transition-colors duration-200 cursor-pointer"
+                                    >
+                                        <div className="icons"><SettingsIcon/></div>
+                                        <div className="menu-item">Settings</div>
+                                    </Link>
+
+                                    <Link 
+                                        href={route('workspace.members', activeWorkspace)}
+                                        className="py-3 flex hover:bg-sky-400 hover:text-white hover:rounded-sm transition-colors duration-200 cursor-pointer"
+                                    >
+                                        <div className="icons"><ManageAccountsIcon/></div>
+                                        <div className="menu-item">Manage Users</div>
+                                    </Link>
+                                </div>
+                            : currentUserStatus === 'admin' || currentUserStatus === 'member' ?
+                                <div>
+                                    <Link 
+                                        href={route('workspace.members', activeWorkspace)}
+                                        className="py-3 flex hover:bg-sky-400 hover:text-white hover:rounded-sm transition-colors duration-200 cursor-pointer"
+                                    >
+                                        <div className="icons"><ManageAccountsIcon/></div>
+                                        <div className="menu-item">Manage Users</div>
+                                    </Link>
+                                </div>
+                            : <p></p>
+                        }
                     </div>
 
                     <div>
@@ -140,7 +178,7 @@ export default function Sidebar( { children, workspace, activeWorkspace }) {
                             <div className="flex mt-3 flex-col max-h-[200px] overflow-y-auto">
                                 {workspace && workspace.length > 0 ? (
                                     workspace.filter((item) => {
-                                        return search.toLowerCase() === '' ? item : item.name.toLowerCase().includes(search)  
+                                        return search.toLowerCase() === '' ? item : item.name.toLowerCase().includes(search); 
                                     })
                                     .map((data) => (
                                         <button
@@ -152,7 +190,6 @@ export default function Sidebar( { children, workspace, activeWorkspace }) {
                                             <img src="https://upload.wikimedia.org/wikipedia/commons/2/28/Lambang_Badan_Pusat_Statistik_%28BPS%29_Indonesia.svg" alt="" width="50"/>
                                             <div className="ml-3">
                                                 <h2 className="text-start">{data.name}</h2>
-                                                <p className="text-sm opacity-50 mt-[-5px]">2 members</p>
                                             </div>
                                         </button>                                        
                                     ))
@@ -312,20 +349,14 @@ export default function Sidebar( { children, workspace, activeWorkspace }) {
                     
 
                     {/* Sidebar bottom menu */}
-                    <div className="absolute bg-blue-300 bottom-5 left-[50%] right-[50%]">
-                        <div className="flex justify-center divide-x-2">
-                            <div className="flex gap-2 hover:bg-sky-400 hover:text-white hover:rounded-lg transition-colors duration-200 px-5 p-2 cursor-pointer">
-                                <PersonAddOutlinedIcon/>
-                                <p>Invite</p>
-                            </div>
-                            <Link
-                                method="post" 
-                                href={route('logout')}
-                                className="flex gap-2 hover:bg-sky-400 hover:text-white hover:rounded-lg transition-colors duration-200 px-5 p-2 cursor-pointer">
-                                <LogoutOutlinedIcon/>
-                                <p>Logout</p>
-                            </Link>
-                        </div>
+                    <div className="flex absolute border-t-2 border-gray-300 bottom-0 w-full justify-start divide-x-2">
+                        <Link
+                            method="post" 
+                            href={route('logout')}
+                            className="flex gap-2 w-full hover:bg-sky-400 hover:text-white hover:rounded-lg transition-colors duration-200 px-5 p-2 cursor-pointer">
+                            <LogoutOutlinedIcon/>
+                            <p>Logout</p>
+                        </Link>
                     </div>
                 </div>
             </nav>

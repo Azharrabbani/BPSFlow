@@ -3,7 +3,7 @@ import { Head, Link, useForm, usePage } from "@inertiajs/react";
 import { useRef, useState } from "react";
 
 
-export default function UpdateWorkspace( { workspace } ) {
+export default function UpdateWorkspace( { workspace, activeMembersStatus } ) {
     const {data, setData, put, processing} = useForm({
         id: workspace.id,
         name: workspace.name,
@@ -19,7 +19,10 @@ export default function UpdateWorkspace( { workspace } ) {
     }
 
     return(
-        <EditWorkspace workspace={workspace}>
+        <EditWorkspace 
+            workspace={workspace}
+            activeMembersStatus={activeMembersStatus}
+        >
             <div className="p-6">
                 <h1 className="text-3xl">Workspace Setting</h1>
             </div>

@@ -1,15 +1,21 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import EditWorkspace from "./EditWorkspace";
 import Select from  "react-select";
+import { Description } from "@headlessui/react";
+import { useForm, Link, usePage } from "@inertiajs/react";
+import SecondaryButton from "@/Components/SecondaryButton";
 
+// Icons
 import PersonAddAltIcon from '@mui/icons-material/PersonAddAlt';
 import InviteMember from "@/Components/workspaces/InviteMember";
 import CloseIcon from '@mui/icons-material/Close';
 import TextInput from "@/Components/TextInput";
 import PrimaryButton from "@/Components/PrimaryButton";
 import SettingsIcon from '@mui/icons-material/Settings';
-import { Description } from "@headlessui/react";
-import { useForm } from "@inertiajs/react";
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import PersonRemoveAlt1Icon from '@mui/icons-material/PersonRemoveAlt1';
+import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
+
 
 const roles = [
     { value: 'admin', label: 'Admin - Dapat mengelola anggota & workspace' },
@@ -47,33 +53,79 @@ const customLayout = {
     }),
 };
 
-export default function Members( { workspace, members } ) {
-    const {data, setData, get, errors, processing, reset} = useForm({
+export default function Members( { workspace, members, activeMembersStatus } ) {
+    const user = usePage().props.auth.user;
+
+    const currentUserStatus = members.find(m => m.user_id === user.id).status;
+
+    let settingMenu = useRef();
+      
+    const {data, setData, post, put, delete:destroy, errors, processing, reset} = useForm({
         email: '',
         role: 'member',
         workspace: workspace.id,
     })
 
     const [open, setOpen] = useState(false);
+    
+    const [search, setSearch] = useState('');
 
-    const sendInvite = (e) => {
+    const [activeMemberId, setActiveMemberId] = useState(null);
+
+    const togglePopup = (id) => {
+        if (activeMemberId === id) {
+            setActiveMemberId(null);
+        } else {
+            setActiveMemberId(id);
+        }
+    }
+
+    useEffect(() => {
+        let handler = (e) => {
+            if (!settingMenu.current.contains(e.target)) {
+                setActiveMemberId(null);
+            }
+        };
+
+        document.addEventListener('mousedown', handler);
+
+        return () => {
+            document.removeEventListener('mousedown', handler);
+        };
+    });
+
+    const invite = (e) => {
         e.preventDefault();
         
-        console.log(data);
-        get(route('invitation.send'), {
+        post(route('invitation.accept'), {
             onSuccess: () => {
                 reset();
                 setOpen(false);
             },
             onError: () => {
-                console.log('Gagal', errors.name);
+                console.log('Gagal', errors);
             }
 
-        })
+        });
     }
 
+    const changeRole = (e, id) => {
+        e.preventDefault();
+        console.log("Edit member dengan ID:", id);
+        put(route('role.update', id));
+    };
+
+    const deleteMember = (e, id) => {
+        e.preventDefault();
+        console.log(id);
+        destroy(route('member.delete', id));
+    };
+
     return(
-        <EditWorkspace workspace={workspace}>
+        <EditWorkspace 
+            workspace={workspace}
+            activeMembersStatus={activeMembersStatus}
+        >
             <div className="p-6">
                 <h1 className="text-3xl"><span className="text-blue-500">{workspace.name}'s</span> Members</h1>
 
@@ -103,6 +155,7 @@ export default function Members( { workspace, members } ) {
                         placeholder="Search..."
                         required=""
                         type="text"
+                        onChange={(e) => setSearch(e.target.value)}
                     />
                     
 
@@ -125,7 +178,7 @@ export default function Members( { workspace, members } ) {
                             Ajak anggota tim atau unit kerja untuk bergabung ke workspace agar kolaborasi dan manajemen proyek berjalan lebih efektif.
                         </p>
 
-                        <form onSubmit={sendInvite}>
+                        <form onSubmit={invite}>
                             <div className="flex flex-col mt-4">
                                 <label htmlFor="spaceInput" className="mb-1">Email</label>
                                 <TextInput 
@@ -135,9 +188,10 @@ export default function Members( { workspace, members } ) {
                                     placeHolder="ex: bps@gmail.com"
                                 />
                                 {errors.email && <p className="text-red-600">{errors.email}</p>}
+                                {errors.user && <p className="text-red-600">{errors.user}</p>}
                             </div>
 
-                            <div className="mt-3">
+                            <div className="mt-4">
                                 <h2 className="opacity-50">Invite sebagai</h2>
                                 <div className="flex items-center w-ful py-5 px-3 rounded-lg space-x-2">
                                     <span className="bg-sky-400 p-3 text-white rounded-md">
@@ -155,7 +209,7 @@ export default function Members( { workspace, members } ) {
                                     
                                 </div>
                             </div>
-                            <div className="flex justify-end">
+                            <div className="flex justify-end my-2">
                                 <PrimaryButton>
                                     Invite
                                 </PrimaryButton>
@@ -181,42 +235,107 @@ export default function Members( { workspace, members } ) {
                     </thead>
 
                     <tbody className="divide-y divide-gray-100">
-                    {members.map(member => (
-                        <tr key={member.id} className="bg-white">
-                            <div className="flex items-center p-3">
-                            <img src={
-                                member.user.photo instanceof File 
-                                ? URL.createObjectURL( member.user.photo) 
-                                :  member.user.photo
-                                ? `/storage/${ member.user.photo}` 
-                                : 'https://cdn-icons-png.flaticon.com/512/9815/9815472.png'
-                            }  alt="Profile" width="45" className='my-5 rounded-full'/>
-                                {member.user.name.length > 0 
-                                    ? <td className="p-3 text-sm text-gray-700 whitespace-nowrap cursor-default">{member.user.name}</td>
-                                    :<td className="p-3 text-sm text-gray-700 whitespace-nowrap cursor-default">karyawan</td>
-                                } 
-                                
-                            </div>
-                            <td className="p-3 text-sm font-bold text-blue-500 whitespace-nowrap cursor-default">{member.user.email}</td>
-                            <td className="p-3 text-sm text-gray-700 whitespace-nowrap cursor-default">{member.user.jabatan}</td>
-                            <td className={`p-3 text-sm whitespace-nowrap cursor-default ${
-                                member.status === 'owner' ? 'text-sky-600' :
-                                member.status === 'admin' ? 'text-orange-500' :
-                                'text-green-500'
-                            }`}>
-                                {member.status}
-                            </td>
-                            <td className="p-3 text-sm text-gray-700 whitespace-nowrap text-center">
-                                <SettingsIcon/>
-                            </td>
-                        </tr>
-                    ))}
+                        { members && members.length > 0 ?
+                           members.filter(({ user, status }) =>
+                                search.trim() === ''
+                                    ? true
+                                    : user.name?.toLowerCase().includes(search.toLowerCase()) ||
+                                      user.jabatan?.toLowerCase().includes(search.toLowerCase()) ||
+                                      user.email?.toLowerCase().includes(search.toLowerCase()) ||
+                                      status?.toLowerCase().includes(search.toLowerCase())
+                            )
+                            .map((member) => (
+                                <tr key={member.id} className="bg-white">
+                                    <div className="flex items-center p-3">
+                                        <img src={
+                                            member.user.photo instanceof File 
+                                            ? URL.createObjectURL( member.user.photo) 
+                                            :  member.user.photo
+                                            ? `/storage/${ member.user.photo}` 
+                                            : 'https://cdn-icons-png.flaticon.com/512/9815/9815472.png'
+                                        }  alt="Profile" width="45" className='my-5 rounded-full'/>
+                                        <td className="p-3 text-sm text-gray-700 whitespace-nowrap cursor-default">{member.user.name}</td>
+                                    </div>
+                                    <td className="p-3 text-sm font-bold text-blue-500 whitespace-nowrap cursor-default">{member.user.email}</td>
+                                    {member.user.jabatan?.length > 0
+                                        ? <td className="p-3 text-sm text-gray-700 whitespace-nowrap cursor-default">{member.user.jabatan}</td>
+                                        : <td className="p-3 text-sm text-gray-700 whitespace-nowrap cursor-default">Karyawan</td>
+                                    }
+                                    
+                                    <td className={`p-3 text-sm whitespace-nowrap cursor-default ${
+                                        member.status === 'owner' ? 'text-sky-600' :
+                                        member.status === 'admin' ? 'text-orange-500' :
+                                        'text-green-500'
+                                    }`}>
+                                        {member.status}
+                                    </td>
+                                    {user.id !== member.user_id && currentUserStatus !== 'member'
+                                        ? 
+                                        <td className="relative p-3 text-sm text-gray-700 whitespace-nowrap text-center">
+                                            {member.status !== 'owner' 
+                                                ? <SettingsIcon 
+                                                    className="hover:opacity-50 cursor-pointer" 
+                                                    onClick={() => togglePopup(member.id)} 
+                                                  />
+                                                : <p>...</p>  
+                                            }
+                                            
+                                            
+                                            {activeMemberId === member.id && (
+                                                <div className="absolute right-full top-1/2 -translate-y-1/2 mr-2 bg-white shadow-lg rounded-md p-4 z-50" ref={settingMenu}>
+                                                    <div className="text-left space-y-4">
+                                                    
+                                                        <Link className="flex items-center gap-1 hover:opacity-50">
+                                                            
+                                                            {member.status === 'member' 
+                                                                ? 
+                                                                <div className="flex items-center gap-1">
+                                                                    <AdminPanelSettingsIcon/>
+                                                                    <p>Set as <span className="text-orange-500">admin</span></p>  
+                                                                </div>
+                                                                : 
+                                                                <div className="flex items-center gap-1">
+                                                                    <AssignmentIndIcon/>
+                                                                    <p>Set as <span className="text-green-500">member</span></p>
+                                                                </div>
+                                                            }
+                                                        </Link>
+                                            
+                                                        <Link 
+                                                            onClick={(e) => deleteMember(e, member.id)}
+                                                            className="flex items-center gap-1 hover:opacity-50"
+                                                        >
+                                                            <PersonRemoveAlt1Icon/>
+                                                            Delete
+                                                        </Link>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </td>
+                                        : 
+                                        <td className="p-3 text-sm text-gray-700 whitespace-nowrap text-center">
+                                            ...
+                                        </td>
+                                    }
+                                </tr>
+                        )) : 
+                            <tr></tr>
+                        }
                     </tbody>
                 </table>
             </div>
 
             <div className="grid grid-cols-1 gap-4 lg:hidden my-4">
-                {members.map(member => (
+                {members && members.length > 0 ? 
+                    members.filter(({ user, status }) =>
+                        search.trim() === ''
+                            ? true
+                            : user.name?.toLowerCase().includes(search.toLowerCase()) ||
+                              user.jabatan?.toLowerCase().includes(search.toLowerCase()) ||
+                              user.email?.toLowerCase().includes(search.toLowerCase()) ||
+                              status?.toLowerCase().includes(search.toLowerCase())
+                    )
+                .map(member => (
                     <div key={member.id} className="bg-white p-4 rounded-lg shadow space-y-1 my-2">
                         <div className="flex items-center space-x-2 text-sm">
                             <div>
@@ -241,11 +360,56 @@ export default function Members( { workspace, members } ) {
                             {member.user.name}
                         
                         </div>
-                        <div className="text-sm font-medium text-black">
-                            <SettingsIcon/>
-                        </div>
+
+                        {user.id !== member.user_id && currentUserStatus !== 'member'
+                            ? 
+                            <div className="relative text-sm font-medium text-black">
+                                
+                                {member.status !== 'owner' 
+                                    ? <SettingsIcon 
+                                        className="hover:opacity-50 cursor-pointer" 
+                                        onClick={() => togglePopup(member.id)} 
+                                      />
+                                    : <p>...</p>  
+                                }
+                                                
+                                    {activeMemberId === member.id && (
+                                        <div className="absolute left-10 top-5 -translate-y-1/2 mr-2 bg-white shadow-lg rounded-md p-4 z-50" ref={settingMenu}>
+                                            <div className="text-left space-y-4">
+                                            
+                                                <Link className="flex items-center gap-1 hover:opacity-50">
+                                                    
+                                                    {member.status === 'member' 
+                                                        ? 
+                                                        <div className="flex items-center gap-1">
+                                                            <AdminPanelSettingsIcon/>
+                                                            <p>Set as <span className="text-orange-500">admin</span></p>  
+                                                        </div>
+                                                        : 
+                                                        <div className="flex items-center gap-1">
+                                                            <AssignmentIndIcon/>
+                                                            <p>Set as <span className="text-green-500">member</span></p>
+                                                        </div>
+                                                    }
+                                                </Link>
+                                    
+                                                <Link className="flex items-center gap-1 hover:opacity-50">
+                                                    <PersonRemoveAlt1Icon/>
+                                                    Delete
+                                                </Link>
+                                            </div>
+                                        </div>
+                                    )}
+                            </div>
+                            : <div className="text-sm font-medium text-black">
+                                ...
+                            </div>
+                        } 
+                            
                     </div>
-                ))}
+                )):
+                    <div></div>
+                }
                 
             </div>
             

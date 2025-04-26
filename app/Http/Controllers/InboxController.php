@@ -4,15 +4,8 @@ namespace App\Http\Controllers;
 
 
 use Inertia\Inertia;
-
-use Illuminate\Http\Request;
-use App\Enums\WorkspaceMembersStatus;
 use App\Enums\WorkspaceStatus;
 use Illuminate\Support\Facades\Auth;
-use App\Http\Requests\WorkspaceRequest;
-use App\Mail\WorkspaceInvitation;
-use App\Models\User;
-use App\Models\Workspace;
 use App\Models\Workspace_members;
 
 class InboxController extends Controller
@@ -21,12 +14,15 @@ class InboxController extends Controller
     {
         $user = Auth::user();
     
-        // Cari workspace aktif dari relasi workspace_members
         $activeMembership = Workspace_members::where('user_id', $user->id)
             ->whereHas('workspace', function ($query) {
                 $query->where('status', WorkspaceStatus::ACTIVE);
             })
             ->first();
+        
+        // Mendapatkan member workspace yang sedang active
+        $activeMembers = Workspace_members::where('workspace_id', $activeMembership->workspace_id)->count();
+        $activeMembersStatus = Workspace_members::where('workspace_id', $activeMembership->workspace_id)->get();
     
         $activeWorkspace = null;
         if ($activeMembership) {
@@ -55,10 +51,12 @@ class InboxController extends Controller
             ->orderBy('id', 'DESC')
             ->get()
             ->pluck('workspace');
-
-        return Inertia::render([
+        
+        return Inertia::render('Inbox/Index', [
             'workspace' => $workspace,
-            'workspace_active' => $activeWorkspace
+            'activeMembers' => $activeMembers,
+            'activeMembersStatus' => $activeMembersStatus,
+            'activeWorkspace' => $activeWorkspace,
         ]);
     }
 }

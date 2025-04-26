@@ -6,7 +6,7 @@ import UpdateProfileInformationForm from './Partials/UpdateProfileInformationFor
 import {useEffect ,useState } from 'react';
 import EditWorkspace from '../Workspace/EditWorkspace';
 
-export default function Edit({ mustVerifyEmail, status, workspace }) {
+export default function Edit({ mustVerifyEmail, status, workspace, activeMembersStatus }) {
     const { flash, errors } = usePage().props;
     const [flashMsg, setFlashMsg] = useState(flash?.message || null);
     const [errorMsg, setErrorMsg] = useState(errors?.error || null);
@@ -23,8 +23,9 @@ export default function Edit({ mustVerifyEmail, status, workspace }) {
     }, [flash, errors]);
     
     return (
-        <EditWorkspace workspace={workspace}
-            
+        <EditWorkspace 
+          workspace={workspace}
+          activeMembersStatus={activeMembersStatus}  
         >
             
             <div className="absolute top-40 right-4 md:right-8 lg:right-1 card-animation">
