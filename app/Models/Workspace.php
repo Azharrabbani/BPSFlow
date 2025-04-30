@@ -22,4 +22,9 @@ class Workspace extends Model
     {
         return $this->hasMany(Workspace_members::class, 'workspace_id');
     }
+
+    public function spaces(): HasMany
+    {
+        return $this->hasMany(Space::class, 'workspace_id');
+    }
 }

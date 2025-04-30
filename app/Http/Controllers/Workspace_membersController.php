@@ -46,6 +46,8 @@ class Workspace_membersController extends Controller
     public function invite(Request $request)
     {
         try{
+            $workspace_members = new Workspace_membersController();
+
             $request->validate([
                 'email' => 'required|email',
                 'role' => 'required|in:admin,member',
@@ -64,13 +66,8 @@ class Workspace_membersController extends Controller
                 return redirect()->back()->withErrors(['email' => 'User sudah menjadi member']);
             }
     
-            Workspace_members::create([
-                'user_id' => $user->id,
-                'workspace_id' => $request->workspace,
-                'status' => $request->role, 
-            ]);
+            $workspace_members->createMember($user->id, $request->workspace, $request->role);
     
-            
             Workspace::where('status', WorkspaceStatus::ACTIVE)
                 ->where('id', '!=', $request->workspace)
                 ->update(['status' => WorkspaceStatus::INACTIVE]);
@@ -116,5 +113,26 @@ class Workspace_membersController extends Controller
             ->first();
 
          return redirect()->route('workspace.members', ['workspace' => $workspace]);
+    }
+
+    public function createMember($user_id, $workspace, $role)
+    {
+        Workspace_members::create([
+            'user_id' => $user_id,
+            'workspace_id' => $workspace,
+            'status' => $role, 
+        ]);
+    }
+
+    public function getMembers($id)
+    {
+        return Workspace_members::where('workspace_id', $id)
+        ->with('user')
+        ->get();
+    }
+
+    public function getMembersStatus($id)
+    {
+        return Workspace_members::where('workspace_id', $id)->get();
     }
 }

@@ -6,26 +6,21 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
-class Workspace_members extends Model
+class Space extends Model
 {
     protected $fillable = [
-        'user_id',
         'workspace_id',
+        'name',
         'status',
     ];
 
-    public function workspace(): BelongsTo
+    public function workspace(): BelongsTo 
     {
         return $this->belongsTo(Workspace::class);
     }
 
-    public function user(): BelongsTo
+    public function workspace_member(): BelongsToMany
     {
-        return $this->belongsTo(User::class);
-    }
-
-    public function space(): BelongsToMany
-    {
-        return $this->belongsToMany(Space::class);
+        return $this->belongsToMany(Workspace_members::class);
     }
 }

@@ -4,6 +4,7 @@ use App\Http\Controllers\OauthController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\WorkspaceController;
 use App\Http\Controllers\InboxController;
+use App\Http\Controllers\SpaceController;
 use App\Http\Controllers\Workspace_membersController;
 use App\Models\Workspace_members;
 use Illuminate\Foundation\Application;
@@ -46,6 +47,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/invite', [Workspace_membersController::class, 'invite'])->name('invitation.accept');
     Route::put('/role/{workspace_member}', [Workspace_membersController::class, 'changeRole'])->name('role.update');
     Route::delete('/workspace/{workspace_member}/members', [Workspace_membersController::class, 'deleteMember'])->name('member.delete');
+
+    // Space Route
+    Route::get('/space', [SpaceController::class, 'index'])->name('space.index');
+    Route::post('/space', [SpaceController::class, 'store'])->name('space.store');
 
     // Inbox Route
     Route::get('/inbox', [InboxController::class, 'index'])->name('inbox');

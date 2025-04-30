@@ -19,6 +19,10 @@ class InboxController extends Controller
                 $query->where('status', WorkspaceStatus::ACTIVE);
             })
             ->first();
+
+        $space_data = new SpaceController();
+
+        $spaces =  $space_data->getSpaces($activeMembership->workspace_id);
         
         // Mendapatkan member workspace yang sedang active
         $activeMembers = Workspace_members::where('workspace_id', $activeMembership->workspace_id)->count();
@@ -57,6 +61,7 @@ class InboxController extends Controller
             'activeMembers' => $activeMembers,
             'activeMembersStatus' => $activeMembersStatus,
             'activeWorkspace' => $activeWorkspace,
+            'spaces' => $spaces
         ]);
     }
 }

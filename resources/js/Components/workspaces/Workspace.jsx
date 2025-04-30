@@ -9,7 +9,7 @@ export default function Workspace( { open,  onClose, children} ) {
             <div 
                 onClick={(e) => e.stopPropagation()}
                 className={`
-                    absolute w-full h-[580px] bg-white rounded-lg left-2
+                    absolute w-full min-h-[580px] bg-white rounded-lg left-2
                     `}
             >
                 {children}
