@@ -24,9 +24,8 @@ class SpaceController extends Controller
             'status' => $spaceData['status'],
         ]);
         
-        if ($spaceData['status'] === 'private') {
+        if ($spaceData['status'] === 'private'){
             $dataSpaceMember = array();
-            
             
             array_push($dataSpaceMember, $space->id, $spaceData['members']);
             
@@ -39,8 +38,31 @@ class SpaceController extends Controller
         
     }
 
-    public function getSpaces($workspace_id) 
+    public function update(Request $request, Space $space)
     {
-       return Space::where('workspace_id', $workspace_id)->get();
+        dd($request->all());
     }
+
+    public function destroy(Space $space)
+    {
+        $space->delete();
+
+        return redirect('/dashboard');
+    }
+
+    public function getPublicSpaces($workspace_id) 
+    {
+       return Space::where(['workspace_id' => $workspace_id, 'status' => SpaceStatus::PUBLIC])->get();
+    }
+
+    public function getPrivateSpaces($user_id)
+    {
+        return Space_members::where('user_id', $user_id)
+            ->whereHas('space', function($query) {
+                $query->where('status', SpaceStatus::PRIVATE);
+            })
+            ->with('space')
+            ->get();
+    }
+    
 }

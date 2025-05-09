@@ -28,7 +28,6 @@ export default function UpdateProfileInformation({
 
         const submit = (e) => {
             e.preventDefault();
-            console.log(data)
             post(route('profile.update'));
         };
 

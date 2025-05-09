@@ -69,4 +69,9 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Workspace::class);
     }
+
+    public function space(): BelongsToMany
+    {
+        return $this->belongsToMany(Space::class);
+    }
 }

@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 
 
 export default function UpdateWorkspace( { workspace, activeMembersStatus } ) {
-    const {data, setData, put, processing} = useForm({
+    const {data, setData, post, processing} = useForm({
         id: workspace.id,
         name: workspace.name,
     });
@@ -15,7 +15,7 @@ export default function UpdateWorkspace( { workspace, activeMembersStatus } ) {
         e.preventDefault();
 
         console.log(workspace);
-        put(route('workspace.update', workspace));
+        post(route('workspace.update', workspace));
     }
 
     return(

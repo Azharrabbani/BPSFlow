@@ -58,13 +58,13 @@ export default function Members( { workspace, members, activeMembersStatus } ) {
 
     const currentUserStatus = members.find(m => m.user_id === user.id).status;
 
-    let settingMenu = useRef();
+    const settingMenu = useRef();
       
-    const {data, setData, post, put, delete:destroy, errors, processing, reset} = useForm({
+    const {data, setData, post, delete:destroy, errors, processing, reset} = useForm({
         email: '',
         role: 'member',
         workspace: workspace.id,
-    })
+    });
 
     const [open, setOpen] = useState(false);
     
@@ -80,19 +80,19 @@ export default function Members( { workspace, members, activeMembersStatus } ) {
         }
     }
 
-    useEffect(() => {
-        let handler = (e) => {
-            if (!settingMenu.current.contains(e.target)) {
-                setActiveMemberId(null);
-            }
-        };
+    // useEffect(() => {
+    //     let handler = (e) => {
+    //         if (!settingMenu.current.contains(e.target)) {
+    //             setActiveMemberId(null);
+    //         }
+    //     };
 
-        document.addEventListener('mousedown', handler);
+    //     document.addEventListener('mousedown', handler);
 
-        return () => {
-            document.removeEventListener('mousedown', handler);
-        };
-    });
+    //     return () => {
+    //         document.removeEventListener('mousedown', handler);
+    //     };
+    // });
 
     const invite = (e) => {
         e.preventDefault();
@@ -109,10 +109,10 @@ export default function Members( { workspace, members, activeMembersStatus } ) {
         });
     }
 
-    const changeRole = (e, id) => {
+    const changeRole = (e, id, newRole) => {
         e.preventDefault();
         console.log("Edit member dengan ID:", id);
-        put(route('role.update', id));
+        post(route('role.update', id, newRole));
     };
 
     const deleteMember = (e, id) => {
@@ -285,24 +285,35 @@ export default function Members( { workspace, members, activeMembersStatus } ) {
                                                 <div className="absolute right-full top-1/2 -translate-y-1/2 mr-2 bg-white shadow-lg rounded-md p-4 z-50" ref={settingMenu}>
                                                     <div className="text-left space-y-4">
                                                     
-                                                        <Link className="flex items-center gap-1 hover:opacity-50">
-                                                            
+                                                        <div >
                                                             {member.status === 'member' 
                                                                 ? 
-                                                                <div className="flex items-center gap-1">
+                                                                <Link 
+                                                                    className="flex items-center gap-1 hover:opacity-50"
+                                                                    onClick={(e) => {
+                                                                        setData('role', 'admin')
+                                                                        changeRole(e, member.id)
+
+                                                                    }}
+                                                                >
                                                                     <AdminPanelSettingsIcon/>
                                                                     <p>Set as <span className="text-orange-500">admin</span></p>  
-                                                                </div>
+                                                                </Link>
                                                                 : 
-                                                                <div className="flex items-center gap-1">
+                                                                <Link 
+                                                                    className="flex items-center gap-1 hover:opacity-50"
+                                                                    onClick={(e) => {
+                                                                        changeRole(e, member.id, 'member')
+                                                                    }}
+                                                                >
                                                                     <AssignmentIndIcon/>
                                                                     <p>Set as <span className="text-green-500">member</span></p>
-                                                                </div>
+                                                                </Link>
                                                             }
-                                                        </Link>
+                                                        </div>
                                             
                                                         <Link 
-                                                            onClick={(e) => deleteMember(e, member.id)}
+                                                            onClick={(e) => deleteMember(e, member)}
                                                             className="flex items-center gap-1 hover:opacity-50"
                                                         >
                                                             <PersonRemoveAlt1Icon/>

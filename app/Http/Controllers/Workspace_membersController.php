@@ -84,6 +84,8 @@ class Workspace_membersController extends Controller
     {
         $user = Auth::user();
 
+        dd($member);
+
 
         $member->update([
             'status' => WorkspaceMembersStatus::ADMIN,

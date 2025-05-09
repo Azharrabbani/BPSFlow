@@ -5,7 +5,6 @@ export default function Workspace( { open,  onClose, children} ) {
             onClick={onClose} 
             className={`${open ? 'visible inset-0 flex justify-center scale-100 opacity-100' : 'invisible scale-125 opacity-0'} transition-all`}
         >
-
             <div 
                 onClick={(e) => e.stopPropagation()}
                 className={`

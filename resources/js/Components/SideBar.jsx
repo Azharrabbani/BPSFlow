@@ -1,6 +1,7 @@
-import { useRef, useState } from 'react';
+import { use, useRef, useState } from 'react';
 import { Link, useForm, usePage } from '@inertiajs/react';
-import ModalSpace from '@/Components/ModalSpace';
+import ModalSpace from '@/Components/spaces/ModalSpace';
+import EditSpace from '@/Components/spaces/EditSpace';
 import TextInput from './TextInput';
 import PrimaryButton from './PrimaryButton';
 import Workspace from '@/Components/workspaces/Workspace';
@@ -19,16 +20,17 @@ import CloseIcon from '@mui/icons-material/Close';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import SettingsIcon from '@mui/icons-material/Settings';
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
+import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 
 
-export default function Sidebar( { children, workspace, members, activeWorkspace, activeMembersStatus, spaces }) {
+export default function Sidebar( { children, workspace, members, activeWorkspace, activeMembersStatus, publicSpaces, privateSpaces }) {
     const user = usePage().props.auth.user;
 
     const workspaceMembers = activeMembersStatus.length;
 
     const currentUserStatus = activeMembersStatus.find(m=> m.user_id === user.id).status;
 
-    const {data, setData, post, put, errors, processing, recentlySuccessful} = useForm({
+    const {data, setData, post, delete:destroy, errors, processing, recentlySuccessful} = useForm({
         name: '',
         role: 'member',
         user_id: user.id,
@@ -37,23 +39,31 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
         members: [],
     });
 
+    const inputSpace = useRef(null);
+
     const currentWorkspace = activeWorkspace.name;
 
     const [open, setOpen] = useState(false);
 
+    const [settingSpace, setSettingSpace] = useState(null);
+
     const [openWorkpace, setOpenWorkplace] = useState(false);
 
     const [createWorkspace, setWorkspace] = useState(false);
-
-    const setHidden = useRef(null);
-
+    
     const [selectedUsers, setSelectedUsers] = useState([]);
+
+    const [showSelectMember, setShowSelectMember] = useState(false);
+    
+    const [showSelectMemberSetting, setShowSelectMemberSetting] = useState(null);
     
     const [search, setSearch] = useState('');
 
     const [searchEmail, setSearchEmail] = useState('');
 
     const [searchSpaces, setSearchSpaces] = useState('');
+
+    const [spaceId, setSpaceId] = useState(false);
 
     // Add new Workspace
     const addWorkspace  = (e) => {
@@ -117,23 +127,50 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
             }
         });
     };
+
+    // Update Space
+    const updateSpace = (e, id) => {
+        e.preventDefault();
+        console.log(data);
+        post(route('space.update', id));
+    };
     
+    // Delete Space
+    const deleteSpace = (e, id) => {
+        e.preventDefault();
+        destroy(route('space.delete', id));
+    }
 
     // Clear search input
     const clear = (e) => {
         e.preventDefault();
         setOpenWorkplace(false);
         setSearch('');
-    }
+    };
 
     // Toggle the checkbox
-    const toggleCheckBox = (email) => {
-        setSelectedUsers(prev => {
-            const updated = prev.includes(email) ? prev.filter(e => e !== email) : [...prev, email];
-            setData('members', updated);
-            return updated;
+    const toggleCheckBox = (user) => {
+        const exists = selectedUsers.find(u => u.id === user.id);
+    
+        let newSelectedUsers;
+        if (exists) {
+            newSelectedUsers = selectedUsers.filter(u => u.id !== user.id);
+        } else {
+            newSelectedUsers = [...selectedUsers, user];
         }
-        );
+    
+        setSelectedUsers(newSelectedUsers);
+    
+        const memberIds = newSelectedUsers.map(u => ({ id: u.id }));
+        setData('members', memberIds);
+    };
+
+    const toggleSetting = (id) => {
+        if (spaceId === id) {
+            setSpaceId(null);
+        } else {
+            setSpaceId(id);
+        }
     };
 
 
@@ -353,14 +390,7 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
                                                 class="slider" 
                                                 onClick={() => {
                                                     setData('status', 'private');
-                                                    
-                                                    if (setHidden.current) {
-                                                        if (setHidden.current.hidden) {
-                                                            setHidden.current.hidden = false
-                                                        } else {
-                                                            setHidden.current.hidden = true
-                                                        }
-                                                    }
+                                                    setShowSelectMember(prev => !prev);
                                                 }}
                                             >
                                             </span>
@@ -374,95 +404,98 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
 
                                     </div>
 
-                                    <div className="mt-2" hidden ref={setHidden}>
-                                        <h2 className="opacity-50">Select Member yang hanya boleh mengakses</h2>
-                                        <hr/>
+                                    {showSelectMember && 
+                                        <div className="mt-2">
+                                            <h2 className="opacity-50">Select Member yang hanya boleh mengakses</h2>
+                                            <hr/>
 
-                                        <div className="flex flex-col mt-4">
-                                            <TextInput 
-                                                value={searchEmail}
-                                                onChange={e => {
-                                                    setData('email', e.target.value);
-                                                    setSearchEmail(e.target.value)  
-                                                }}
-                                                type="email"
-                                                placeHolder="Cari atau masukkan email yang akan diberikan akses"
-                                            />
-                                            {errors.email && <p className="text-red-600">{errors.email}</p>}
-                                            {errors.user && <p className="text-red-600">{errors.user}</p>}
-                                        </div>
+                                            <div className="flex flex-col mt-4">
+                                                <TextInput 
+                                                    value={searchEmail}
+                                                    onChange={e => {
+                                                        setData('email', e.target.value);
+                                                        setSearchEmail(e.target.value)  
+                                                    }}
+                                                    type="email"
+                                                    placeHolder="Cari atau masukkan email yang akan diberikan akses"
+                                                />
+                                                {errors.email && <p className="text-red-600">{errors.email}</p>}
+                                                {errors.user && <p className="text-red-600">{errors.user}</p>}
+                                            </div>
 
-                                        <div className="overflow-y-auto max-h-[130px]">
-                                        {members && members.length > 0 ? (
-                                             members.filter(({ user }) =>
-                                                searchEmail.trim() === ''
-                                                    ? true
-                                                    : user.email?.toLowerCase().includes(searchEmail.toLowerCase())
-                                            )
-                                             .map((data) => (
-                                                <div key={data.id}>
-                                                    {data.status === 'owner' ? (
-                                                        <div 
-                                                            className="p-2 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors duration-200"
-                                                            onLoad={() => toggleCheckBox(data.user)}
-                                                        >
-                                                            <div className="flex items-center space-x-2">
-                                                                <input 
-                                                                    className="peer appearance-none w-5 h-5 rounded focus:outline-none checked:bg-blue-500 hover:ring hover:ring-blue-600" 
-                                                                    type="checkbox" 
-                                                                    checked
-                                                                    readOnly
-                                                                />                                   
-                                                                <img 
-                                                                    className="rounded-full" 
-                                                                    src={
-                                                                        data.user.photo instanceof File 
-                                                                            ? URL.createObjectURL(data.user.photo) 
-                                                                            : data.user.photo
-                                                                                ? `/storage/${data.user.photo}` 
-                                                                                : 'https://cdn-icons-png.flaticon.com/512/9815/9815472.png'
-                                                                    } 
-                                                                    alt="" 
-                                                                    width="40"
-                                                                />
-                                                                <p>{data.user.email}</p>       
+                                            <div className="overflow-y-auto max-h-[130px]">
+                                            {members && members.length > 0 ? (
+                                                members.filter(({ user }) =>
+                                                    searchEmail.trim() === ''
+                                                        ? true
+                                                        : user.email?.toLowerCase().includes(searchEmail.toLowerCase())
+                                                )
+                                                .map((data) => (
+                                                    <div key={data.id}>
+                                                        {data.status === 'owner' ? (
+                                                            <div 
+                                                                className="p-2 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors duration-200"
+                                                                onLoad={() => toggleCheckBox(data.user)}
+                                                            >
+                                                                <div className="flex items-center space-x-2">
+                                                                    <input 
+                                                                        className="peer appearance-none w-5 h-5 rounded focus:outline-none checked:bg-blue-500 hover:ring hover:ring-blue-600" 
+                                                                        type="checkbox" 
+                                                                        checked={selectedUsers.includes(data.user)}
+                                                                        readOnly
+                                                                        disabled="true"
+                                                                    />                                   
+                                                                    <img 
+                                                                        className="rounded-full" 
+                                                                        src={
+                                                                            data.user.photo instanceof File 
+                                                                                ? URL.createObjectURL(data.user.photo) 
+                                                                                : data.user.photo
+                                                                                    ? `/storage/${data.user.photo}` 
+                                                                                    : 'https://cdn-icons-png.flaticon.com/512/9815/9815472.png'
+                                                                        } 
+                                                                        alt="" 
+                                                                        width="40"
+                                                                    />
+                                                                    <p>{data.user.email}</p>       
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    ) : (
-                                                        <div 
-                                                            className="p-2 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors duration-200"
-                                                            onClick={() => toggleCheckBox(data.user)}
-                                                        >
-                                                            <div className="flex items-center space-x-2">
-                                                                <input 
-                                                                    className="peer appearance-none w-5 h-5 rounded focus:outline-none checked:bg-blue-500 hover:ring hover:ring-blue-600" 
-                                                                    type="checkbox" 
-                                                                    checked={selectedUsers.includes(data.user)}
-                                                                    readOnly
-                                                                />                                   
-                                                                <img 
-                                                                    className="rounded-full" 
-                                                                    src={
-                                                                        data.user.photo instanceof File 
-                                                                            ? URL.createObjectURL(data.user.photo) 
-                                                                            : data.user.photo
-                                                                                ? `/storage/${data.user.photo}` 
-                                                                                : 'https://cdn-icons-png.flaticon.com/512/9815/9815472.png'
-                                                                    } 
-                                                                    alt="" 
-                                                                    width="40"
-                                                                />
-                                                                <p>{data.user.email}</p>            
+                                                        ) : (
+                                                            <div 
+                                                                className="p-2 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors duration-200"
+                                                                onClick={() => toggleCheckBox(data.user)}
+                                                            >
+                                                                <div className="flex items-center space-x-2">
+                                                                    <input 
+                                                                        className="peer appearance-none w-5 h-5 rounded focus:outline-none checked:bg-blue-500 hover:ring hover:ring-blue-600" 
+                                                                        type="checkbox" 
+                                                                        checked={selectedUsers.includes(data.user)}
+                                                                        readOnly
+                                                                    />                                   
+                                                                    <img 
+                                                                        className="rounded-full" 
+                                                                        src={
+                                                                            data.user.photo instanceof File 
+                                                                                ? URL.createObjectURL(data.user.photo) 
+                                                                                : data.user.photo
+                                                                                    ? `/storage/${data.user.photo}` 
+                                                                                    : 'https://cdn-icons-png.flaticon.com/512/9815/9815472.png'
+                                                                        } 
+                                                                        alt="" 
+                                                                        width="40"
+                                                                    />
+                                                                    <p>{data.user.email}</p>            
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    )}         
-                                                </div>
-                                             ))
-                                             ): <p></p>
-                                        }
-                                            
+                                                        )}         
+                                                    </div>
+                                                ))
+                                                ): <p></p>
+                                            }
+                                                
+                                            </div>
                                         </div>
-                                    </div>
+                                    }
                                 </form>
                             </ModalSpace>
 
@@ -471,26 +504,382 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
                     
                     {/* Sidebar list menu */}
                     <div>
-                        <ul className="w-full justify-center">
+                        {/* Public Spaces */}
+                        <p className="text-sm text-gray-400 px-3 mt-4">Public</p>
+                        <hr />
+                        <ul className="w-full justify-center max-h-[150px] overflow-y-auto">
 
-                                {spaces && spaces.length > 0 ? (
-                                    spaces.filter((item) => {
+                                {publicSpaces && publicSpaces.length > 0 ? (
+                                    publicSpaces.filter((item) => {
                                         return search.toLowerCase() === '' ? item : item.name.toLowerCase().includes(search); 
                                     })
-                                    .map((data) => (
-                                        <li className="py-3 flex hover:bg-sky-400 hover:text-white hover:rounded-sm transition-colors duration-200 cursor-pointer space-x-0">
+                                    .map((space) => (
+                                        <li 
+                                            className="py-3 flex items-center hover:bg-sky-400 hover:text-white hover:rounded-sm transition-colors duration-200 cursor-pointer space-x-0"
+                                            key={space.id}
+                                        >
                                             <div className="icon-menu"><DesktopWindowsOutlinedIcon/></div>
-                                            <div className="menu-item">{data.name}</div>
+                                            <div className="menu-item">{space.name}</div>
                                             <div className="flex px-3 gap-2">
-                                                <MoreHorizOutlinedIcon className="w-2 hover:bg-[#19324928] rounded-md cursor-pointer"/>
+                                                <SettingsIcon 
+                                                    onClick={() => setSettingSpace(space.id)}
+                                                    className="w-2 hover:bg-[#19324928] rounded-md cursor-pointer"
+                                                />
+                                                <HighlightOffIcon
+                                                    onClick={(e) => deleteSpace(e, space)}
+                                                    className="w-2 hover:bg-[#19324928] rounded-md cursor-pointer"
+                                                />
                                                 <AddOutlinedIcon className="w-2 hover:bg-[#19324928] rounded-md cursor-pointer"/>
                                             </div>
-                                        </li>                                
+
+                                                    <EditSpace open={settingSpace === space.id}>
+                                                        <CloseIcon 
+                                                            className='absolute right-3 top-4 cursor-pointer hover:opacity-50' 
+                                                            onClick={() => {
+                                                                setSettingSpace(null); 
+                                                                clear();
+                                                            }}
+                                                        />
+
+                                                        <div className="mt-1">
+                                                            <h2 className="text-xl pb-1">Space Setting</h2>
+                                                            <p className="opacity-50">Space mewakili bagian, subbagian, atau kelompok kerja, lengkap dengan daftar tugas, alur pelaksanaan</p>
+                                                        </div>
+
+                                                        <form onSubmit={(e) => updateSpace(e, space)}>
+                                                            <div className="flex flex-col mt-4">
+                                                                <label htmlFor="spaceInput" className="mb-1">Space Name</label>
+                                                                <TextInput 
+                                                                    placeHolder="ex: Unit Perancangan" 
+                                                                    onChange={(e) =>  setData('name', e.target.value)} 
+                                                                    defaultValue={space.name}
+                                                                />
+                                                                {errors.name && <p className="error text-red-500">{errors.name}</p>}
+                                                            </div>
+                                                        
+
+                                                            <div className="mt-[50px] flex justify-between">
+                                                                <div className="">
+                                                                    <h2>Buat Private</h2>
+                                                                    <p className="opacity-50 pr-[50px]">Buat untuk hanya member yang anda izinkan bisa akses</p>
+                                                                </div>
+                                                                <label class="switch relative top-3">
+                                                                    <input type="checkbox"/>
+                                                                    <span 
+                                                                        class="slider" 
+                                                                        onClick={() => {
+                                                                            setData('status', 'private');
+                                                                            setShowSelectMemberSetting(prev => prev === space.id ? null : space.id);
+                                                                        }}
+                                                                    >
+                                                                    </span>
+                                                                </label>
+                                                            </div>
+
+                                                            <div className='flex justify-end mt-3'>
+                                                                {data.name === space.name || data.name.length == 0
+                                                                ?   <PrimaryButton 
+                                                                        className="cursor-not-allowed" 
+                                                                        disabled
+                                                                    >
+                                                                        Update
+                                                                    </PrimaryButton> 
+                                                                :   <PrimaryButton disabled={processing}>
+                                                                        Update
+                                                                    </PrimaryButton> }
+                                                                
+
+                                                            </div>
+                                                            
+                                                            {showSelectMemberSetting === space.id && 
+                                                                <div className="mt-2">
+                                                                    <h2 className="opacity-50">Select Member yang hanya boleh mengakses</h2>
+                                                                    <hr/>
+
+                                                                    <div className="flex flex-col mt-4">
+                                                                        <TextInput 
+                                                                            value={searchEmail}
+                                                                            onChange={e => {
+                                                                                setData('email', e.target.value);
+                                                                                setSearchEmail(e.target.value)  
+                                                                            }}
+                                                                            type="email"
+                                                                            placeHolder="Cari atau masukkan email yang akan diberikan akses"
+                                                                        />
+                                                                        {errors.email && <p className="text-red-600">{errors.email}</p>}
+                                                                        {errors.user && <p className="text-red-600">{errors.user}</p>}
+                                                                    </div>
+
+                                                                    <div className="overflow-y-auto max-h-[130px]">
+                                                                    {members && members.length > 0 ? (
+                                                                        members.filter(({ user }) =>
+                                                                            searchEmail.trim() === ''
+                                                                                ? true
+                                                                                : user.email?.toLowerCase().includes(searchEmail.toLowerCase())
+                                                                        )
+                                                                        .map((data) => (
+                                                                            <div key={data.id}>
+                                                                                {data.status === 'owner' ? (
+                                                                                    <div 
+                                                                                        className="p-2 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors duration-200"
+                                                                                        onLoad={() => toggleCheckBox(data.user)}
+                                                                                    >
+                                                                                        <div className="flex items-center space-x-2">
+                                                                                            <input 
+                                                                                                className="peer appearance-none w-5 h-5 rounded focus:outline-none checked:bg-blue-500 hover:ring hover:ring-blue-600" 
+                                                                                                type="checkbox" 
+                                                                                                checked
+                                                                                                readOnly
+                                                                                            />                                   
+                                                                                            <img 
+                                                                                                className="rounded-full" 
+                                                                                                src={
+                                                                                                    data.user.photo instanceof File 
+                                                                                                        ? URL.createObjectURL(data.user.photo) 
+                                                                                                        : data.user.photo
+                                                                                                            ? `/storage/${data.user.photo}` 
+                                                                                                            : 'https://cdn-icons-png.flaticon.com/512/9815/9815472.png'
+                                                                                                } 
+                                                                                                alt="" 
+                                                                                                width="40"
+                                                                                            />
+                                                                                            <p>{data.user.email}</p>       
+                                                                                        </div>
+                                                                                    </div>
+                                                                                ) : (
+                                                                                    <div 
+                                                                                        className="p-2 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors duration-200"
+                                                                                        onClick={() => toggleCheckBox(data.user)}
+                                                                                    >
+                                                                                        <div className="flex items-center space-x-2">
+                                                                                            <input 
+                                                                                                className="peer appearance-none w-5 h-5 rounded focus:outline-none checked:bg-blue-500 hover:ring hover:ring-blue-600" 
+                                                                                                type="checkbox" 
+                                                                                                checked={selectedUsers.includes(data.user)}
+                                                                                                readOnly
+                                                                                            />                                   
+                                                                                            <img 
+                                                                                                className="rounded-full" 
+                                                                                                src={
+                                                                                                    data.user.photo instanceof File 
+                                                                                                        ? URL.createObjectURL(data.user.photo) 
+                                                                                                        : data.user.photo
+                                                                                                            ? `/storage/${data.user.photo}` 
+                                                                                                            : 'https://cdn-icons-png.flaticon.com/512/9815/9815472.png'
+                                                                                                } 
+                                                                                                alt="" 
+                                                                                                width="40"
+                                                                                            />
+                                                                                            <p>{data.user.email}</p>            
+                                                                                        </div>
+                                                                                    </div>
+                                                                                )}         
+                                                                            </div>
+                                                                        ))
+                                                                        ): <p></p>
+                                                                    }
+                                                                        
+                                                                    </div>
+                                                                </div>
+                                                        
+                                                            }
+                                                        </form>
+                                                    </EditSpace>                                        
+                                        </li>        
                                     ))
-                                ): <p></p>}
-                            
-                             
+                                ): <p></p>} 
                         </ul>
+
+                        {/* Private Spaces */}
+                        <p className="text-sm text-gray-400 px-3 mt-4">Private</p>
+                        <hr />
+                        <ul className="w-full justify-center max-h-[150px] overflow-y-auto">
+
+                                {privateSpaces && privateSpaces.length > 0 ? (
+                                    
+                                    privateSpaces.filter((item) => {
+                                        return search.toLowerCase() === '' ? item : item.name.toLowerCase().includes(search); 
+                                    })
+                                    .map((space) => (
+                                        <li 
+                                            className="py-3 flex hover:bg-sky-400 hover:text-white hover:rounded-sm transition-colors duration-200 cursor-pointer space-x-0"
+                                            key={space.id}
+                                        >
+                                            <div className="icon-menu"><DesktopWindowsOutlinedIcon/></div>
+                                            <div className="menu-item">{space.space.name}</div>
+                                            <div className="flex px-3 gap-2">
+                                                <SettingsIcon 
+                                                    onClick={() => setSettingSpace(space.space.id)}
+                                                    className="w-2 hover:bg-[#19324928] rounded-md cursor-pointer"
+                                                />
+                                                <HighlightOffIcon
+                                                    onClick={(e) => deleteSpace(e, space.space)}
+                                                    className="w-2 hover:bg-[#19324928] rounded-md cursor-pointer"
+                                                />
+                                                <AddOutlinedIcon className="w-2 hover:bg-[#19324928] rounded-md cursor-pointer"/>
+                                            </div>
+                                           
+                                               
+                                                    <EditSpace open={settingSpace === space.space.id} onClose={() => setSettingSpace(null)}>
+                                                        <CloseIcon 
+                                                            className='absolute right-3 top-4 cursor-pointer hover:opacity-50' 
+                                                            onClick={() => {
+                                                                setSettingSpace(null); 
+                                                                clear();
+                                                            }}
+                                                        />
+
+                                                        <div className="mt-1">
+                                                            <h2 className="text-xl pb-1">Space Setting</h2>
+                                                            <p className="opacity-50">Space mewakili bagian, subbagian, atau kelompok kerja, lengkap dengan daftar tugas, alur pelaksanaan</p>
+                                                        </div>
+
+                                                        <form onSubmit={(e) => updateSpace(e, space)}>
+                                                            <div className="flex flex-col mt-4">
+                                                                <label htmlFor="spaceInput" className="mb-1">Space Name</label>
+                                                                <TextInput 
+                                                                    placeHolder="ex: Unit Perancangan" 
+                                                                    onChange={(e) =>  setData('name', e.target.value)} 
+                                                                    defaultValue={space.space.name}
+                                                                />
+                                                                {errors.name && <p className="error text-red-500">{errors.name}</p>}
+                                                            </div>
+                                                        
+
+                                                            <div className="mt-[50px] flex justify-between">
+                                                                <div className="">
+                                                                    <h2>Buat Private</h2>
+                                                                    <p className="opacity-50 pr-[50px]">Buat untuk hanya member yang anda izinkan bisa akses</p>
+                                                                </div>
+                                                                <label class="switch relative top-3">
+                                                                    <input type="checkbox"/>
+                                                                    <span 
+                                                                        class="slider" 
+                                                                        onClick={() => {
+                                                                            setData('status', 'private');
+                                                                            setShowSelectMember(prev => prev === space.id ? null : space.id);
+                                                                        }}
+                                                                    >
+                                                                    </span>
+                                                                </label>
+                                                            </div>
+
+                                                            <div className='flex justify-end mt-3'>
+                                                            {data.name === space.space.name || data.name.length == 0
+                                                                ?   <PrimaryButton 
+                                                                        className="cursor-not-allowed" 
+                                                                        disabled
+                                                                    >
+                                                                        Update
+                                                                    </PrimaryButton> 
+                                                                :   <PrimaryButton disabled={processing}>
+                                                                        Update
+                                                                    </PrimaryButton> }
+
+                                                            </div>
+
+                                                            {showSelectMember === space.id && 
+                                                                <div className="mt-2">
+                                                                    <h2 className="opacity-50">Select Member yang hanya boleh mengakses</h2>
+                                                                    <hr/>
+
+                                                                    <div className="flex flex-col mt-4">
+                                                                        <TextInput 
+                                                                            value={searchEmail}
+                                                                            onChange={e => {
+                                                                                setData('email', e.target.value);
+                                                                                setSearchEmail(e.target.value)  
+                                                                            }}
+                                                                            type="email"
+                                                                            placeHolder="Cari atau masukkan email yang akan diberikan akses"
+                                                                        />
+                                                                        {errors.email && <p className="text-red-600">{errors.email}</p>}
+                                                                        {errors.user && <p className="text-red-600">{errors.user}</p>}
+                                                                    </div>
+
+                                                                    <div className="overflow-y-auto max-h-[130px]">
+                                                                        {members && members.length > 0 ? (
+                                                                            members.filter(({ user }) =>
+                                                                                searchEmail.trim() === ''
+                                                                                    ? true
+                                                                                    : user.email?.toLowerCase().includes(searchEmail.toLowerCase())
+                                                                            )
+                                                                            .map((data) => (
+                                                                                <div key={data.id}>
+                                                                                    {data.status === 'owner' ? (
+                                                                                        <div 
+                                                                                            className="p-2 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors duration-200"
+                                                                                            onLoad={() => toggleCheckBox(data.user)}
+                                                                                        >
+                                                                                            <div className="flex items-center space-x-2">
+                                                                                                <input 
+                                                                                                    className="peer appearance-none w-5 h-5 rounded focus:outline-none checked:bg-blue-500 hover:ring hover:ring-blue-600" 
+                                                                                                    type="checkbox" 
+                                                                                                    checked
+                                                                                                    readOnly
+                                                                                                />                                   
+                                                                                                <img 
+                                                                                                    className="rounded-full" 
+                                                                                                    src={
+                                                                                                        data.user.photo instanceof File 
+                                                                                                            ? URL.createObjectURL(data.user.photo) 
+                                                                                                            : data.user.photo
+                                                                                                                ? `/storage/${data.user.photo}` 
+                                                                                                                : 'https://cdn-icons-png.flaticon.com/512/9815/9815472.png'
+                                                                                                    } 
+                                                                                                    alt="" 
+                                                                                                    width="40"
+                                                                                                />
+                                                                                                <p>{data.user.email}</p>       
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    ) : (
+                                                                                        <div 
+                                                                                            className="p-2 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors duration-200"
+                                                                                            onClick={() => toggleCheckBox(data.user)}
+                                                                                        >
+                                                                                            <div className="flex items-center space-x-2">
+                                                                                                <input 
+                                                                                                    className="peer appearance-none w-5 h-5 rounded focus:outline-none checked:bg-blue-500 hover:ring hover:ring-blue-600" 
+                                                                                                    type="checkbox" 
+                                                                                                    checked={selectedUsers.includes(data.user)}
+                                                                                                    readOnly
+                                                                                                />                                   
+                                                                                                <img 
+                                                                                                    className="rounded-full" 
+                                                                                                    src={
+                                                                                                        data.user.photo instanceof File 
+                                                                                                            ? URL.createObjectURL(data.user.photo) 
+                                                                                                            : data.user.photo
+                                                                                                                ? `/storage/${data.user.photo}` 
+                                                                                                                : 'https://cdn-icons-png.flaticon.com/512/9815/9815472.png'
+                                                                                                    } 
+                                                                                                    alt="" 
+                                                                                                    width="40"
+                                                                                                />
+                                                                                                <p>{data.user.email}</p>            
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    )}         
+                                                                                </div>
+                                                                            ))
+                                                                            ): <p></p>
+                                                                        }
+                                                                        
+                                                                    </div>
+                                                                </div>
+                                                            }
+                                                        </form>
+                                                    </EditSpace>
+                                             
+                                             
+                                        </li>   
+                                    ))
+                                    
+                                ): <p></p>}
+                        </ul>
+
+                       
                     </div>
                     
 

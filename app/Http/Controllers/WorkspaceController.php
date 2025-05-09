@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\SpaceStatus;
 use App\Enums\WorkspaceMembersStatus;
 use App\Enums\WorkspaceStatus;
 use App\Http\Requests\WorkspaceMemberRequest;
 use App\Http\Requests\WorkspaceRequest;
 use App\Mail\WorkspaceInvitation;
 use App\Models\Space;
+use App\Models\Space_members;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Models\Workspace_members;
@@ -32,8 +34,12 @@ class WorkspaceController extends Controller
     
         $activeMembership = $workspaces->getActiveWorkspace($user->id);
 
-        $spaces = $spaces->getSpaces($activeMembership->workspace_id);
+        $publicSpaces = $spaces->getPublicSpaces($activeMembership->workspace_id);
 
+        $privateSpaces = $spaces->getPrivateSpaces($user->id);
+
+        // dd($privateSpaces);
+        
         $members = $workspace_members->getMembers($activeMembership->workspace_id);
 
         if (!$activeMembership) {
@@ -79,7 +85,8 @@ class WorkspaceController extends Controller
             'activeMembers' => $activeMembers,
             'activeMembersStatus' => $activeMembersStatus,
             'activeWorkspace' => $activeWorkspace,
-            'spaces' => $spaces
+            'publicSpaces' => $publicSpaces,
+            'privateSpaces' => $privateSpaces
         ]);
     }
     

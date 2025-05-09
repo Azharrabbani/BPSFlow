@@ -24,8 +24,4 @@ class Workspace_members extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function space(): BelongsToMany
-    {
-        return $this->belongsToMany(Space::class);
-    }
 }

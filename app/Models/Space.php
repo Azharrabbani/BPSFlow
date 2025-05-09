@@ -19,7 +19,7 @@ class Space extends Model
         return $this->belongsTo(Workspace::class);
     }
 
-    public function workspace_member(): BelongsToMany
+    public function user(): BelongsToMany
     {
         return $this->belongsToMany(Workspace_members::class);
     }

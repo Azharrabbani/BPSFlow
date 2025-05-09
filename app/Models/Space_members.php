@@ -12,9 +12,9 @@ class Space_members extends Model
         'space_id',
     ];
 
-    public function workspace_member(): BelongsTo
+    public function user(): BelongsTo
     {
-        return $this->belongsTo(Workspace_members::class);
+        return $this->belongsTo(User::class);
     }
 
     public function space(): BelongsTo

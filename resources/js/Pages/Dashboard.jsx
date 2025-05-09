@@ -4,7 +4,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { useRef, useState } from 'react';
 
-export default function Dashboard({ workspace, members, activeWorkspace, activeMembersStatus, spaces }) {
+export default function Dashboard({ workspace, members, activeWorkspace, activeMembersStatus, publicSpaces, privateSpaces }) {
     const user = usePage().props.auth.user;
 
     const {data, setData, post, delete:destory, errors, processing, recentlySuccessful} = useForm({
@@ -24,12 +24,12 @@ export default function Dashboard({ workspace, members, activeWorkspace, activeM
     const handleCancel = () => {
         setDataId(null);
         setTimeout(() => inputWorkspace.current?.focus(), 0);
-    }
+    };
 
     const createWorkspace = (e) => {
         e.preventDefault();
         post(route('workspace.store'));
-    }
+    };
 
     const updateWorkspace = (e, id) => {
         e.preventDefault();
@@ -43,7 +43,7 @@ export default function Dashboard({ workspace, members, activeWorkspace, activeM
         e.preventDefault();
 
         destory(route('workspace.delete', id));
-    }
+    };
 
     return (
         <AuthenticatedLayout 
@@ -51,7 +51,8 @@ export default function Dashboard({ workspace, members, activeWorkspace, activeM
             members={members}
             activeWorkspace={activeWorkspace}
             activeMembersStatus={activeMembersStatus}
-            spaces={spaces}
+            publicSpaces={publicSpaces}
+            privateSpaces={privateSpaces}
         >
             <Head title="Dashboard" />
 
@@ -109,7 +110,6 @@ export default function Dashboard({ workspace, members, activeWorkspace, activeM
                                             {dataId === workspaceData.id ? (
                                                 <div className='flex gap-2'>
                                                 <form onSubmit={(e) => updateWorkspace(e, workspaceData.id)}>
-                                                    
                                                     <button 
                                                         type="submit"
                                                         className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"

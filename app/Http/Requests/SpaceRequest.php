@@ -23,7 +23,7 @@ class SpaceRequest extends FormRequest
     {
         return [
             'workspace_id' => ['required', 'integer'],
-            'name' => ['required', 'string', 'max: 255'],
+            'name' => ['required', 'string', 'max:255'],
             'status' => ['required', 'string'],
             'members' => ['nullable', 'array'],
             'members.*.id' => ['required', 'integer', 'exists:users,id'],
