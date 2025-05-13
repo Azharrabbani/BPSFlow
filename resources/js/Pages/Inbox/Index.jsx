@@ -2,15 +2,14 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head } from "@inertiajs/react";
 import { useState } from "react";
 
-export default function Index({ workspace, activeWorkspace, activeMembers, activeMembersStatus, publicSpaces, privateSpaces }) {
+export default function Index({ workspace, activeWorkspace, activeMembers, activeMembersStatus, getSpaces }) {
     return(
         <AuthenticatedLayout 
             workspace={workspace}
             activeWorkspace={activeWorkspace}
             activeMembersStatus={activeMembersStatus}
             activeMembers={activeMembers}
-            publicSpaces={publicSpaces}
-            privateSpaces={privateSpaces}
+            getSpaces={getSpaces}
         >
 
             <Head title="Inbox"/>

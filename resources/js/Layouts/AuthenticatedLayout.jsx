@@ -6,7 +6,7 @@ import { Link, router, usePage } from '@inertiajs/react';
 import { useRef, useState } from 'react';
 import Sidebar from '@/Components/sideBar';
 
-export default function AuthenticatedLayout({ header, children, workspace, members, activeWorkspace, activeMembersStatus, publicSpaces, privateSpaces }) {
+export default function AuthenticatedLayout({ header, children, workspace, members, activeWorkspace, activeMembersStatus, getSpaces }) {
     const user = usePage().props.auth.user;
 
     return (
@@ -15,8 +15,7 @@ export default function AuthenticatedLayout({ header, children, workspace, membe
             members={members}
             activeWorkspace={activeWorkspace}
             activeMembersStatus={activeMembersStatus}
-            publicSpaces={publicSpaces}
-            privateSpaces={privateSpaces}
+            getSpaces={getSpaces}
         >
         <div className="min-h-screen bg-blue-100 ">
            

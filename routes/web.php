@@ -4,6 +4,7 @@ use App\Http\Controllers\OauthController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\WorkspaceController;
 use App\Http\Controllers\InboxController;
+use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\SpaceController;
 use App\Http\Controllers\Workspace_membersController;
 use App\Models\Space;
@@ -38,7 +39,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/workspace', [WorkspaceController::class, 'store'])->name('workspace.store');
     Route::get('/workspace/{workspace}', [WorkspaceController::class, 'edit'])->name('workspace.edit');
     Route::get('/workspace/{workspace}/deleteWorkspace', [WorkspaceController::class, 'deleteConfirmation'])->name('workspace.deletePage');
-    Route::put('/workspace/{workspace}/switch', [WorkspaceController::class, 'switchWorkspace'])->name('workspace.switch');
+    Route::post('/workspace/{workspace}/switch', [WorkspaceController::class, 'switchWorkspace'])->name('workspace.switch');
     Route::post('/workspace/{workspace}', [WorkspaceController::class, 'update'])->name('workspace.update');
     Route::delete('workspace/{workspace}', [WorkspaceController::class, 'destroy'])->name('workspace.delete');
     
@@ -50,11 +51,16 @@ Route::middleware('auth')->group(function () {
     Route::delete('/workspace/{workspace_member}/members', [Workspace_membersController::class, 'deleteMember'])->name('member.delete');
 
     // Space Route
-    Route::get('/space', [SpaceController::class, 'index'])->name('space.index');
     Route::post('/space', [SpaceController::class, 'store'])->name('space.store');
-    Route::post('/space/{space}', [Space::class, 'update'])->name('space.update');
-    Route::delete('/space/{space}', [Space::class, 'destroy'])->name('space.delete');
+    Route::post('/space/{space}', [SpaceController::class, 'update'])->name('space.update');
+    Route::delete('/space/{space}', [SpaceController::class, 'destroy'])->name('space.delete');
 
+    // Project Route
+    Route::post('/project', [ProjectController::class, 'store'])->name('project.store');
+    Route::get('/project/{space_id}', [ProjectController::class, 'getProjects'])->name('project.get');
+    Route::post('/project/{project}', [ProjectController::class, 'update'])->name('project.update');
+    Route::delete('/project/{project}', [ProjectController::class, 'destroy'])->name('project.delete');
+    
     // Inbox Route
     Route::get('/inbox', [InboxController::class, 'index'])->name('inbox');
 

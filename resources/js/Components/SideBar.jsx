@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { use, useRef, useState } from 'react';
 import { Link, useForm, usePage } from '@inertiajs/react';
 import ModalSpace from '@/Components/spaces/ModalSpace';
@@ -6,11 +7,18 @@ import TextInput from './TextInput';
 import PrimaryButton from './PrimaryButton';
 import Workspace from '@/Components/workspaces/Workspace';
 import CreateWorkspace from '@/Components/workspaces/CreateWorkspace';
+import SpaceMenu from '@/Components/spaces/spaceMenu';
+import ModalProject from '@/Components/projects/ModalProject';
+import ConfirmDeleteSpace from '@/Components/spaces/ConfirmDeleteSpace';
+import ProjectSetting from '@/Components/projects/ProjectSetting';
+import ConfirmDeleteProject from '@/Components/projects/ConfirmDeleteProject';
+import EditProject from '@/Components/projects/EditProject';
+import SecondaryButton from './SecondaryButton';
 
 
 // icons
 import DesktopWindowsOutlinedIcon from '@mui/icons-material/DesktopWindowsOutlined';
-import MoreHorizOutlinedIcon from '@mui/icons-material/MoreHorizOutlined';
+import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
@@ -21,27 +29,38 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import SettingsIcon from '@mui/icons-material/Settings';
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
+import CancelIcon from '@mui/icons-material/Cancel';
+import AccountTreeOutlinedIcon from '@mui/icons-material/AccountTreeOutlined';
+import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import DriveFileMoveOutlineIcon from '@mui/icons-material/DriveFileMoveOutline';
+import FolderOpenOutlinedIcon from '@mui/icons-material/FolderOpenOutlined';
+import CheckOutlinedIcon from '@mui/icons-material/CheckOutlined';
+import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 
 
-export default function Sidebar( { children, workspace, members, activeWorkspace, activeMembersStatus, publicSpaces, privateSpaces }) {
+export default function Sidebar( { children, workspace, members, activeWorkspace, activeMembersStatus, publicSpaces, privateSpaces, getSpaces }) {
     const user = usePage().props.auth.user;
 
     const workspaceMembers = activeMembersStatus.length;
 
+    const flatSpaces = getSpaces.flat();
+
     const currentUserStatus = activeMembersStatus.find(m=> m.user_id === user.id).status;
 
-    const {data, setData, post, delete:destroy, errors, processing, recentlySuccessful} = useForm({
+    const currentWorkspace = activeWorkspace.name;
+
+    const {data, setData, post, get, delete:destroy, errors, processing, recentlySuccessful} = useForm({
         name: '',
         role: 'member',
         user_id: user.id,
+        space_id: '',
         workspace_id: activeWorkspace.id,
         status: 'public',
         members: [],
     });
 
-    const inputSpace = useRef(null);
-
-    const currentWorkspace = activeWorkspace.name;
 
     const [open, setOpen] = useState(false);
 
@@ -61,9 +80,38 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
 
     const [searchEmail, setSearchEmail] = useState('');
 
+    const [toggleWorkspaceMore, setToggleWorkspaceMore] = useState(null);
+
+    const [toggleShowProject, setToggleShowProject] = useState(null);
+
+    const [toggleProjectMore, setToggleProjectMore] = useState(null);
+    
+    // spaces state
     const [searchSpaces, setSearchSpaces] = useState('');
 
-    const [spaceId, setSpaceId] = useState(false);
+    const [spaceSearch, setSpaceSearch] = useState(false);
+
+    const [spaceDeleteId, setSpaceDeleteId] = useState(null);
+
+    const [spaceMenu, setSpaceMenu] = useState(null);
+
+    // projects state
+    const [projectId, setProjectId] = useState(null);
+
+    const [toggleProjects, setToggleProjects] = useState(null);    
+
+    const [projectMenu, setProjectMenu] = useState(null);
+
+    const [confirmDeleteProject, setConfirmDeleteProject] = useState(null);
+
+    const [inputValueProject, setInputValueProject] = useState(null);
+
+    const [editProjectid, setEditProjectId] = useState(null);
+
+    const [projects, setProjects] = useState([]);
+
+
+    // Method
 
     // Add new Workspace
     const addWorkspace  = (e) => {
@@ -103,7 +151,7 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
     const switchWorkspace = (e, id) => {
         e.preventDefault();
         setSearch('');
-        put(route('workspace.switch', id));
+        post(route('workspace.switch', id));
     }
 
 
@@ -131,14 +179,101 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
     // Update Space
     const updateSpace = (e, id) => {
         e.preventDefault();
-        console.log(data);
         post(route('space.update', id));
     };
     
     // Delete Space
     const deleteSpace = (e, id) => {
         e.preventDefault();
-        destroy(route('space.delete', id));
+        destroy(route('space.delete', id), 
+        {
+            onSuccess: () => {
+                setSpaceDeleteId(null);
+            },
+            onError: () => {
+                console.log('Gagal Menghapus space');
+            },
+            onFinish: () => {
+                console.log('selesai');
+            }
+        }
+    );
+    }
+
+    // Add Project
+    const addProject = (e) => {
+        e.preventDefault();
+        post(route('project.store'),
+        {
+            onSuccess: () => {
+                setProjectId(null);
+                setData.name = '';
+                setData.space_id = '';
+            },
+            onError: () => {
+                data.members = [];
+                console.log(data.members);
+                console.log('Gagal', errors.name);
+            },
+            onFinish: () => {
+                console.log('selesai');
+            }
+        });
+    };
+
+    // Get Projects
+    const getProjects = async (e, spaceId) => {
+        e.preventDefault();
+
+        if (toggleProjects === spaceId) {
+            setToggleProjects(null);
+            setProjects([]);
+            return;
+        }
+
+        try{
+            const response = await axios.get(route('project.get', spaceId));
+            setProjects((prev) => ({ ...prev, [spaceId]: response.data }));
+            setToggleProjects(spaceId);
+        } catch(error) {
+            console.error('Gagal fetch project:', error);
+        }
+    }
+
+    // Update Project
+     const updateProject = (e, id) => {
+        e.preventDefault();
+        post(route('project.update', id), {
+            onSuccess: () => {
+                setEditProjectId(null);
+                setToggleProjects(null);
+            },
+            onError: () => {
+                console.log('Update Project Gagal')
+            },
+            onFinish: () => {
+                console.log('selesai');
+            }
+        });
+    };
+
+    // Delete Project
+    const deleteProject = (e, id) => {
+        e.preventDefault();
+
+        destroy(route('project.delete', id), {
+            onSuccess: () => {
+                setToggleProjects(null);
+                setConfirmDeleteProject(null);
+                setProjectMenu(null);
+            },
+            onError: () => {
+                console.log('Gagal Menghapus project');
+            },
+            onFinish: () => {
+                console.log('selesai');
+            }
+        })
     }
 
     // Clear search input
@@ -151,8 +286,8 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
     // Toggle the checkbox
     const toggleCheckBox = (user) => {
         const exists = selectedUsers.find(u => u.id === user.id);
-    
         let newSelectedUsers;
+
         if (exists) {
             newSelectedUsers = selectedUsers.filter(u => u.id !== user.id);
         } else {
@@ -165,14 +300,23 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
         setData('members', memberIds);
     };
 
-    const toggleSetting = (id) => {
-        if (spaceId === id) {
-            setSpaceId(null);
-        } else {
-            setSpaceId(id);
-        }
+
+    const handleClick_SearchSpace = () => {
+        setSpaceSearch(true);
     };
 
+    const handleCancel_searchSpace = () => {
+        setSpaceSearch(false);
+        setSearchSpaces('');
+    };
+
+    const spaceMenuPopUp = () => {
+        setSpaceMenu(true);
+    };
+
+    const closeSpaceMenuPopUp = () => {
+        setSpaceMenu(false);
+    };
 
     return (
          <div className="h-screen flex bg-blue-100">
@@ -296,7 +440,7 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
                 <CreateWorkspace open={createWorkspace} onClose={() => setWorkspace(false)}>
                     <CloseIcon className='absolute right-3 top-4 cursor-pointer hover:opacity-50' onClick={() => setWorkspace(false)}/>
 
-                    <div className="mt-1">
+                    <div className="mt-1 cursor-default">
                         <h2 className="text-xl pb-1">Buat Wokspace Baru</h2>
                         <p className="opacity-50">Gunakan workspace untuk mengelompokkan tugas berdasarkan tim atau unit kerja agar manajemen proyek lebih tertata.</p>
                     </div>
@@ -342,17 +486,41 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
                     </div>
                     
                     {/* spaces header */}
-                    <div className=" flex px-3 pt-3 justify-between">
-                        <p className="text-sm text-gray-800">Spaces</p>
-
-                        <div className="flex px-[0px] gap-2">
-                            <SearchOutlinedIcon className="w-2 hover:bg-[#19324928] rounded-md cursor-pointer"/>
-                            <MoreHorizOutlinedIcon className="w-2 hover:bg-[#19324928] rounded-md cursor-pointer"/>
-                            <AddOutlinedIcon
-                                onClick={() => setOpen(true)} 
-                                className="w-2 hover:bg-[#19324928] rounded-md cursor-pointer"
-                            />
-                            
+                    <div className="flex px-3 pt-3 justify-between items-center">
+                        {spaceSearch ? 
+                            <div>
+                                <TextInput 
+                                    className="h-[30px] w-[170px] border-transparent focus:border-transparent focus:ring-0 opacity-50 text-black rounded-md"
+                                    placeHolder="search..."
+                                    value={searchSpaces}
+                                    onChange={(e) => setSearchSpaces(e.target.value)}
+                                >
+                                </TextInput>
+                                <CancelIcon
+                                    className="flex items-center cursor-pointer text-slate-500 hover:text-red-500 transition-colors duration-200"
+                                    onClick={() => handleCancel_searchSpace()}
+                                />
+                            </div>
+                            : 
+                            <>
+                              
+                                    <p className="text-sm text-gray-800">Spaces</p>
+                                    <div className="ml-[134px] space-x-2">
+                                        <SearchOutlinedIcon 
+                                                className="hover:text-blue-500 rounded-md cursor-pointer"
+                                                onClick={() => handleClick_SearchSpace()}
+                                            />
+                                        {/* <MoreHorizOutlinedIcon className="hover:text-blue-500 rounded-md cursor-pointer"/> */}
+                                        <AddOutlinedIcon
+                                            onClick={() => setOpen(true)} 
+                                            className="hover:text-green-600 rounded-md cursor-pointer"
+                                        />
+                                    </div>
+                               
+                            </>
+                        } 
+                        
+                        <div className="flex px-[0px] gap-2">                
                             <ModalSpace open={open} onClose={() => setOpen(false)}>
                                 <CloseIcon 
                                     className='absolute right-3 top-4 cursor-pointer hover:opacity-50' 
@@ -362,7 +530,7 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
                                     }}
                                 />
 
-                                <div className="mt-1">
+                                <div className="mt-1 cursor-default">
                                     <h2 className="text-xl pb-1">Buat Space Baru</h2>
                                     <p className="opacity-50">Space mewakili bagian, subbagian, atau kelompok kerja, lengkap dengan daftar tugas, alur pelaksanaan</p>
                                 </div>
@@ -380,7 +548,7 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
                                 
 
                                     <div className="mt-[50px] flex justify-between">
-                                        <div className="">
+                                        <div className="cursor-default">
                                             <h2>Buat Private</h2>
                                             <p className="opacity-50 pr-[50px]">Buat untuk hanya member yang anda izinkan bisa akses</p>
                                         </div>
@@ -504,33 +672,64 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
                     
                     {/* Sidebar list menu */}
                     <div>
-                        {/* Public Spaces */}
-                        <p className="text-sm text-gray-400 px-3 mt-4">Public</p>
-                        <hr />
-                        <ul className="w-full justify-center max-h-[150px] overflow-y-auto">
+                        {/* Spaces */}
+                        <ul className="relative w-full justify-center max-h-[500px] overflow-y-auto">
 
-                                {publicSpaces && publicSpaces.length > 0 ? (
-                                    publicSpaces.filter((item) => {
-                                        return search.toLowerCase() === '' ? item : item.name.toLowerCase().includes(search); 
+                                {flatSpaces && flatSpaces.length > 0 ? (
+                                    flatSpaces.filter((item) => {
+                                        return searchSpaces.toLowerCase() === '' ? item : item.name.toLowerCase().includes(searchSpaces); 
                                     })
-                                    .map((space) => (
+                                )
+                                .map((space) => (
+                                    <>
                                         <li 
                                             className="py-3 flex items-center hover:bg-sky-400 hover:text-white hover:rounded-sm transition-colors duration-200 cursor-pointer space-x-0"
                                             key={space.id}
+                                            onMouseOver={() => {
+                                                setToggleWorkspaceMore(space.id);
+                                                setToggleShowProject(space.id);
+                                            }}
+                                            onMouseLeave={() => {
+                                                setToggleWorkspaceMore(null);
+                                                setToggleShowProject(null);
+                                            }}
                                         >
-                                            <div className="icon-menu"><DesktopWindowsOutlinedIcon/></div>
+                                            <div className="icon-menu">
+                                                {toggleShowProject === space.id ? (
+                                                    <>
+                                                        <KeyboardArrowDownIcon
+                                                            className="hover:bg-[#19324928] rounded-md"
+                                                            onClick={(e) => {
+                                                                setToggleProjects((toggleProjects) => !toggleProjects);
+                                                                getProjects(e, space.id);
+                                                            }}
+                                                        />
+                                                        
+                                                    </>
+                                                )
+                                                    : <DesktopWindowsOutlinedIcon/>
+                                                }
+                                            </div>
                                             <div className="menu-item">{space.name}</div>
                                             <div className="flex px-3 gap-2">
-                                                <SettingsIcon 
-                                                    onClick={() => setSettingSpace(space.id)}
+                                                {toggleWorkspaceMore === space.id && (
+                                                    <>
+                                                        <SettingsIcon 
+                                                            onClick={() => setSettingSpace(space.id)}
+                                                            className="w-2 hover:bg-[#19324928] rounded-md cursor-pointer"
+                                                        />
+                                                        <HighlightOffIcon
+                                                            onClick={() => setSpaceDeleteId(space)}
+                                                            className="w-2 hover:bg-[#19324928] rounded-md cursor-pointer"
+                                                        />
+                                                    </>
+                                                )}
+                                                <AddOutlinedIcon 
                                                     className="w-2 hover:bg-[#19324928] rounded-md cursor-pointer"
+                                                    onClick={() => setSpaceMenu(space)}
                                                 />
-                                                <HighlightOffIcon
-                                                    onClick={(e) => deleteSpace(e, space)}
-                                                    className="w-2 hover:bg-[#19324928] rounded-md cursor-pointer"
-                                                />
-                                                <AddOutlinedIcon className="w-2 hover:bg-[#19324928] rounded-md cursor-pointer"/>
                                             </div>
+
 
                                                     <EditSpace open={settingSpace === space.id}>
                                                         <CloseIcon 
@@ -577,18 +776,9 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
                                                             </div>
 
                                                             <div className='flex justify-end mt-3'>
-                                                                {data.name === space.name || data.name.length == 0
-                                                                ?   <PrimaryButton 
-                                                                        className="cursor-not-allowed" 
-                                                                        disabled
-                                                                    >
+                                                                <PrimaryButton disabled={processing}>
                                                                         Update
-                                                                    </PrimaryButton> 
-                                                                :   <PrimaryButton disabled={processing}>
-                                                                        Update
-                                                                    </PrimaryButton> }
-                                                                
-
+                                                                </PrimaryButton> 
                                                             </div>
                                                             
                                                             {showSelectMemberSetting === space.id && 
@@ -685,22 +875,263 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
                                                             }
                                                         </form>
                                                     </EditSpace>                                        
-                                        </li>        
-                                    ))
-                                ): <p></p>} 
+                                        </li>     
+
+                                        <div>
+                                                {toggleProjects === space.id && (
+                                                    <ul>
+                                                        {(projects[space.id] && projects[space.id].length > 0) ? (
+                                                            projects[space.id].map((project) => (
+                                                                <li 
+                                                                    className="p-3 ml-3 flex justify-between hover:bg-green-400 hover:text-white rounded-md transition-colors duration-200 cursor-pointer"
+                                                                    key={project.id}
+                                                                    onMouseOver={() => {
+                                                                        setToggleProjectMore(space.id)
+                                                                    }}
+                                                                    onMouseLeave={() => {
+                                                                        setToggleProjectMore(null)
+                                                                    }}
+                                                                    
+                                                                >
+                                                                    <div className="flex items-center gap-2">
+                                                                        <FolderOpenOutlinedIcon/>
+                                                                        <p>{project.name}</p>
+                                                                        
+                                                                        
+                                                                    </div>
+
+                                                                    <div className="flex space-x-1">
+                                                                        {toggleProjectMore === space.id ? (
+                                                                            <>
+                                                                                <MoreHorizIcon 
+                                                                                    className="hover:bg-[#fffdfd88] rounded-md cursor-pointer"
+                                                                                    onClick={() => setProjectMenu(project)}
+                                                                                />
+                                                                                <AddOutlinedIcon className="hover:bg-[#fffdfd88] rounded-md cursor-pointer"/>
+                                                                            </>
+
+                                                                        ):
+                                                                            <AddOutlinedIcon className="hover:bg-[#fffdfd88] rounded-md cursor-pointer"/>
+                                                                        }
+                                                                    </div>
+                                                                </li>
+                                                            ))
+                                                        ) : (
+                                                            <li className="text-gray-400 italic p-3 ml-3">Tidak ada project</li>
+                                                        )}
+                                                    </ul>
+                                                )} 
+                                        </div>
+                                    </>
+                                        
+                                    )) : <p></p>
+                                }
+
+                                <SpaceMenu open={spaceMenu} onClose={() => setSpaceMenu(null)}>
+                                    <p className="mt-[-12px] text-sm opacity-50">Membuat</p>
+                                    <hr />
+                                    <div className="mt-5 space-y-4">
+                                        <div 
+                                            className="w-full cursor-pointer hover:bg-green-300 p-3 rounded-lg"
+                                            onClick={() => {
+                                                setProjectId(spaceMenu);
+                                                setSpaceMenu(null);
+                                            }}
+                                        >
+                                            <div className="flex space-x-1">
+                                                <h2>Project</h2>
+                                                <AccountTreeOutlinedIcon className="text-green-500"/>
+                                            </div>
+                                            <p className="text-sm opacity-75 p-2">mengelola tugas dan timeline dalam satu tempat</p>
+                                        </div>
+                                        <div className="w-full cursor-pointer hover:bg-blue-300 p-3 rounded-lg">
+                                            <div className="flex space-x-1">
+                                                <h2>Doc</h2>
+                                                <ArticleOutlinedIcon className="text-blue-700"/>
+                                            </div>
+                                            <p className="text-sm opacity-75 p-2">Ruang untuk menulis hal penting untuk tim</p>
+                                        </div>
+                                    </div>
+                                </SpaceMenu>
+
+                                <ConfirmDeleteSpace open={spaceDeleteId} onClose={() => setSpaceDeleteId(null)}>
+                                    <div className="p-5">
+                                        <div className="rounded-md flex justify-center mb-5">
+                                            <img src="https://t3.ftcdn.net/jpg/06/02/35/80/360_F_602358067_MTaipFpj2ioPKAYXA4wEpc6vu5P9QCfb.jpg" alt="" width={"100"}/>
+                                        </div>
+                                        {spaceDeleteId && (
+                                            <>
+                                                <h1 className="text-red-600 cursor-default">Delete: <b><u>{spaceDeleteId.name}</u></b></h1>
+                                                <p className="cursor-default">
+                                                    Tindakan ini akan menghapus semua data dalam space. Proses ini bersifat permanen. Apakah anda yakin ingin lanjutkan?
+                                                </p>
+
+                                                <div className="flex justify-center space-x-5 mt-10">
+                                                    <SecondaryButton 
+                                                        className="hover:bg-slate-200"
+                                                        onClick={() => setSpaceDeleteId(null)}
+                                                    >
+                                                        Cancel
+                                                    </SecondaryButton>
+                                                    <PrimaryButton 
+                                                        className="bg-red-500 hover:bg-red-600"
+                                                        onClick={(e) => deleteSpace(e, spaceDeleteId)} 
+                                                    >
+                                                        Delete
+                                                    </PrimaryButton>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                </ConfirmDeleteSpace>
+
+                                <ModalProject open={projectId} onClose={() => setProjectId(null)}>
+                                    <CloseIcon className='absolute right-3 top-4 cursor-pointer hover:opacity-50' onClick={() => setProjectId(null)}/>
+                                    <div className="mt-1 cursor-default">
+                                        <h2 className="text-xl pb-1">Buat Project Baru</h2>
+                                        <p className="opacity-50">Gunakan project untuk mengelompokkan tugas yang akan ditugaskan kepada para member yang ada di workspace</p>
+                                    </div>
+
+                                    {projectId && (
+                                        <form onSubmit={(e) => {
+                                                addProject(e, projectId.id);
+                                                setToggleProjects(null);
+                                            }}
+                                        >
+                                            <div className="flex flex-col mt-4">
+                                                <label htmlFor="spaceInput" className="mb-1">Project Name</label>
+                                                <TextInput 
+                                                    placeHolder="ex: Website BPS" 
+                                                    onChange={(e) => {
+                                                        setData('name', e.target.value);
+                                                        setData('space_id', projectId.id);
+                                                    }} 
+                                                    value={data.name}/>
+                                                {errors.name && <p className="error text-red-500">{errors.name}</p>}
+                                            </div>
+                                            <PrimaryButton className="absolute bottom-7 right-8">
+                                                Create
+                                            </PrimaryButton>
+                                        </form>
+                                    )}
+                                </ModalProject>
+
+                                <ProjectSetting open={projectMenu} onClose={() => setProjectMenu(null)}>
+                                    {projectMenu && (
+                                        <div className="space-y-3">
+                                            <p><b>{projectMenu['name']}</b></p>
+                                            <hr/>
+                                            <div 
+                                                className="flex space-x-1 hover:bg-sky-300 hover:text-white p-2 rounded-lg cursor-pointer transition-colors duration-200"
+                                                onClick={() => {
+                                                    setEditProjectId(projectMenu);
+                                                    setProjectMenu(null);
+                                                }}
+                                            >
+                                                <EditIcon/>
+                                                <p>Rename</p>
+                                            </div>
+                                            <div 
+                                                className="flex space-x-1 hover:bg-sky-300 hover:text-white p-2 rounded-lg cursor-pointer transition-colors duration-200"
+                                                onClick={() => setConfirmDeleteProject(projectMenu)}
+                                            >
+                                                <DeleteIcon/>
+                                                <p>Delete</p>
+                                            </div>
+                                            <div className="flex space-x-1 hover:bg-sky-300 hover:text-white p-2 rounded-lg cursor-pointer transition-colors duration-200">
+                                                <DriveFileMoveOutlineIcon/>
+                                                <p>Pindahkan</p>
+                                            </div>
+                                        </div>
+
+                                    )}
+                                </ProjectSetting>
+
+                                <EditProject open={editProjectid} onClose={() => setEditProjectId(null)}>
+                                    {editProjectid && (
+                                        <div className="space-y-3 p-2">
+                                            <p className="text-center">Edit: <b>{editProjectid['name']}</b></p>
+                                            <hr/>
+                                            
+                                            <div className="flex justify-center pb-3">
+                                                <input 
+                                                    className="h-[30px] rounded-md border-none bg-slate-100 p-5"
+                                                    defaultValue={editProjectid['name']}
+                                                    onChange={(e) => {
+                                                        setInputValueProject(e.target.value)
+                                                        setData('name', e.target.value);
+                                                        setData('space_id', editProjectid['id'])
+                                                    }}
+                                                    type="text" 
+                                                />
+                                            </div>
+                                            <div className="flex justify-center space-x-3">
+                                                {editProjectid.name === inputValueProject ? (
+                                                    <PrimaryButton 
+                                                        className="bg-blue-400 hover:bg-sky-500 transition-colors duration-200"
+                                                        disabled
+                                                        onClick={(e) => updateProject(e, editProjectid['id'])}
+                                                    >   
+                                                        Save
+                                                    </PrimaryButton>
+                                                ): 
+                                                    <PrimaryButton 
+                                                        className="bg-blue-400 hover:bg-sky-500 transition-colors duration-200"
+                                                        onClick={(e) => updateProject(e, editProjectid['id'])}
+                                                    >   
+                                                        Save
+                                                    </PrimaryButton>
+                                                }
+                                            </div>
+                                        </div>
+
+                                    )}
+                                </EditProject>
+                                
+                                <ConfirmDeleteProject open={confirmDeleteProject} onClose={() => setConfirmDeleteProject(null)}>
+                                    <div className="p-5">
+                                        <div className="rounded-md flex justify-center mb-5">
+                                            <img src="https://t3.ftcdn.net/jpg/06/02/35/80/360_F_602358067_MTaipFpj2ioPKAYXA4wEpc6vu5P9QCfb.jpg" alt="" width={"100"}/>
+                                        </div>
+                                        {confirmDeleteProject && (
+                                            <>
+                                                <h1 className="text-red-600 cursor-default">Delete: <b><u>{confirmDeleteProject.name}</u></b></h1>
+                                                <p className="cursor-default">
+                                                    Tindakan ini akan menghapus seluruh data yang terkait dengan proyek ini, termasuk tugas, dokumen, dan konten lainnya secara permanen.
+                                                </p>
+
+                                                <div className="flex justify-center space-x-5 mt-10">
+                                                    <SecondaryButton 
+                                                        className="hover:bg-slate-200"
+                                                        onClick={() => setConfirmDeleteProject(null)}
+                                                    >
+                                                        Cancel
+                                                    </SecondaryButton>
+                                                    <PrimaryButton 
+                                                        className="bg-red-500 hover:bg-red-600"
+                                                        onClick={(e) => {
+                                                            deleteProject(e, confirmDeleteProject);
+                                                        }} 
+                                                    >
+                                                        Delete
+                                                    </PrimaryButton>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                </ConfirmDeleteProject>
+                                
+
+
+
                         </ul>
 
                         {/* Private Spaces */}
-                        <p className="text-sm text-gray-400 px-3 mt-4">Private</p>
+                        {/* <p className="text-sm text-gray-400 px-3 mt-4">Private</p>
                         <hr />
                         <ul className="w-full justify-center max-h-[150px] overflow-y-auto">
 
-                                {privateSpaces && privateSpaces.length > 0 ? (
-                                    
-                                    privateSpaces.filter((item) => {
-                                        return search.toLowerCase() === '' ? item : item.name.toLowerCase().includes(search); 
-                                    })
-                                    .map((space) => (
+                                {privateSpaces.map((space) => (
                                         <li 
                                             className="py-3 flex hover:bg-sky-400 hover:text-white hover:rounded-sm transition-colors duration-200 cursor-pointer space-x-0"
                                             key={space.id}
@@ -874,10 +1305,9 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
                                              
                                              
                                         </li>   
-                                    ))
-                                    
-                                ): <p></p>}
-                        </ul>
+                                    ))   
+                                }
+                        </ul> */}
 
                        
                     </div>

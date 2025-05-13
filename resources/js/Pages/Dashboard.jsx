@@ -4,7 +4,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { useRef, useState } from 'react';
 
-export default function Dashboard({ workspace, members, activeWorkspace, activeMembersStatus, publicSpaces, privateSpaces }) {
+export default function Dashboard({ workspace, members, activeWorkspace, activeMembersStatus, getSpaces }) {
     const user = usePage().props.auth.user;
 
     const {data, setData, post, delete:destory, errors, processing, recentlySuccessful} = useForm({
@@ -51,8 +51,7 @@ export default function Dashboard({ workspace, members, activeWorkspace, activeM
             members={members}
             activeWorkspace={activeWorkspace}
             activeMembersStatus={activeMembersStatus}
-            publicSpaces={publicSpaces}
-            privateSpaces={privateSpaces}
+            getSpaces={getSpaces}
         >
             <Head title="Dashboard" />
 

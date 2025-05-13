@@ -10,12 +10,15 @@ use App\Models\Space_members;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Redirect;
 use Illuminate\Validation\ValidationException;
 
 class SpaceController extends Controller
 {   
     public function store(SpaceRequest $request) 
     {
+        $user = Auth::user();
+
         $spaceData = $request->validated();
         
         $space = Space::create([
@@ -24,18 +27,28 @@ class SpaceController extends Controller
             'status' => $spaceData['status'],
         ]);
         
-        if ($spaceData['status'] === 'private'){
-            $dataSpaceMember = array();
-            
-            array_push($dataSpaceMember, $space->id, $spaceData['members']);
-            
-            $space_member = new Space_MembersController();
-            
-            $space_member->store($dataSpaceMember);
+        if ($spaceData['status'] === 'private') {
+            $dataSpaceMember = [$space->id, $spaceData['members']];
+        } else {
+            $workspaceController = new WorkspaceController();
+            $workspaceMembersController = new Workspace_membersController();
+        
+            $activeWorkspace = $workspaceController->getActiveWorkspace($user->id);
+        
+            if (!$activeWorkspace) {
+                return back()->withErrors(['workspace' => 'Active workspace not found.']);
+            }
+        
+            $workspaceMembers = $workspaceMembersController->getMembers($activeWorkspace->workspace_id);
+
+            $workspaceMemberIds = $workspaceMembers->pluck('user_id')->toArray();
+        
+            $dataSpaceMember = [$space->id, $workspaceMemberIds];
         }
-        
-        return redirect('/dashboard');
-        
+
+        $space_member = new Space_MembersController();
+        $space_member->store($dataSpaceMember);
+        return Redirect::route('dashboard');
     }
 
     public function update(Request $request, Space $space)
@@ -47,7 +60,7 @@ class SpaceController extends Controller
     {
         $space->delete();
 
-        return redirect('/dashboard');
+        return Redirect::route('dashboard');
     }
 
     public function getPublicSpaces($workspace_id) 
@@ -55,14 +68,13 @@ class SpaceController extends Controller
        return Space::where(['workspace_id' => $workspace_id, 'status' => SpaceStatus::PUBLIC])->get();
     }
 
-    public function getPrivateSpaces($user_id)
+    public function getPrivateSpaces($workspace_id, $user_id)
     {
-        return Space_members::where('user_id', $user_id)
-            ->whereHas('space', function($query) {
-                $query->where('status', SpaceStatus::PRIVATE);
+       return Space::where(['workspace_id' => $workspace_id, 'status' => SpaceStatus::PRIVATE])
+            ->whereHas('space_member', function($query) use ($user_id) {
+                $query->where('user_id', $user_id);
             })
-            ->with('space')
-            ->get();
+        ->get();
     }
     
 }

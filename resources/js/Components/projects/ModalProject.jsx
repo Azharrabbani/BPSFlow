@@ -1,5 +1,4 @@
-export default function ModalSpace( { open, onClose, children} ) {
-
+export default function ModalProject({ open, onClose, children }) {
     return (
         <div 
             onClick={onClose} 
@@ -11,7 +10,7 @@ export default function ModalSpace( { open, onClose, children} ) {
             <div 
                 onClick={(e) => e.stopPropagation()}
                 className={`
-                bg-white rounded-xl shadow p-6 transition-all w-[600px] min-h-[350px]
+                bg-white rounded-xl shadow p-6 transition-all w-[600px] min-h-[300px]
                 ${open ? "scale-100 opacity-100" : "scale-125 opacity-0"}
                 `}>
                 {children}  
@@ -19,5 +18,5 @@ export default function ModalSpace( { open, onClose, children} ) {
             </div>
             
         </div>
-    );
+    )
 }

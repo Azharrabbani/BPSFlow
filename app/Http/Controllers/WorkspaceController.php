@@ -17,6 +17,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Redirect;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
@@ -36,9 +37,11 @@ class WorkspaceController extends Controller
 
         $publicSpaces = $spaces->getPublicSpaces($activeMembership->workspace_id);
 
-        $privateSpaces = $spaces->getPrivateSpaces($user->id);
+        $privateSpaces = $spaces->getPrivateSpaces($activeMembership->workspace_id, $user->id);
 
-        // dd($privateSpaces);
+
+        $getSpaces = array();
+        array_push($getSpaces, $publicSpaces, $privateSpaces);
         
         $members = $workspace_members->getMembers($activeMembership->workspace_id);
 
@@ -85,8 +88,7 @@ class WorkspaceController extends Controller
             'activeMembers' => $activeMembers,
             'activeMembersStatus' => $activeMembersStatus,
             'activeWorkspace' => $activeWorkspace,
-            'publicSpaces' => $publicSpaces,
-            'privateSpaces' => $privateSpaces
+            'getSpaces' => $getSpaces,
         ]);
     }
     
@@ -186,7 +188,7 @@ class WorkspaceController extends Controller
             'status' => WorkspaceMembersStatus::OWNER
         ]);
 
-        return redirect('/dashboard');
+        return Redirect::route('dashboard');
     }
 
     public function switchWorkspace(Workspace $workspace)
@@ -203,7 +205,7 @@ class WorkspaceController extends Controller
             'status' => WorkspaceStatus::ACTIVE,
         ]);
 
-        return redirect('/dashboard');
+        return Redirect::route('dashboard');
     }
 
     public function update(WorkspaceRequest $request, Workspace $workspace) 
@@ -228,7 +230,7 @@ class WorkspaceController extends Controller
     {
         $workspace->delete();
 
-        return redirect('/dashboard');
+        return Redirect::route('dashboard');
     }
 
     public function getActiveWorkspace($id)
@@ -240,7 +242,7 @@ class WorkspaceController extends Controller
             ->first();
     }
 
-    public function getInactiveWorkspace($id)
+    private function getInactiveWorkspace($id)
     {
         return Workspace_members::where('user_id', $id)
             ->whereHas('workspace', function ($query) {
