@@ -228,6 +228,19 @@ class WorkspaceController extends Controller
 
     public function destroy(Workspace $workspace)
     {
+        $user = Auth::user();
+
+        $workspaceToUpdate = Workspace::where('status', WorkspaceStatus::INACTIVE)
+        ->whereHas('members', function ($query) use ($user) {
+            $query->where('user_id', $user->id);
+        })
+        ->orderBy('created_at', 'asc') 
+        ->first();
+
+        if ($workspaceToUpdate) {
+            $workspaceToUpdate->update(['status' => WorkspaceStatus::ACTIVE]);
+        }
+
         $workspace->delete();
 
         return Redirect::route('dashboard');
