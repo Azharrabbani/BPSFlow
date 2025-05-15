@@ -7,6 +7,7 @@ use App\Enums\WorkspaceStatus;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Models\Workspace_members;
+use App\Http\Requests\WorkspaceMemberRequest;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -80,15 +81,16 @@ class Workspace_membersController extends Controller
         
     }
 
-    public function changeRole(Workspace_members $member)
+    public function changeRole(Request $request ,Workspace_members $member)
     {
         $user = Auth::user();
 
-        dd($member);
-
+        $role = $request->validate([
+            'role' => 'required|string',
+        ]);
 
         $member->update([
-            'status' => WorkspaceMembersStatus::ADMIN,
+            'status' => $role['role']
         ]);
 
         $workspace = Workspace_members::where('user_id', $user->id)

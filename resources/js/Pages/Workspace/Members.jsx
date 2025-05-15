@@ -62,7 +62,7 @@ export default function Members( { workspace, members, activeMembersStatus } ) {
       
     const {data, setData, post, delete:destroy, errors, processing, reset} = useForm({
         email: '',
-        role: 'member',
+        role: '',
         workspace: workspace.id,
     });
 
@@ -109,15 +109,16 @@ export default function Members( { workspace, members, activeMembersStatus } ) {
         });
     }
 
-    const changeRole = (e, id, newRole) => {
+    const changeRole = (e, id, role) => {
         e.preventDefault();
-        console.log("Edit member dengan ID:", id);
-        post(route('role.update', id, newRole));
+        data.role = role;
+        setActiveMemberId(null);
+        reset();
+        post(route('role.update', id));
     };
 
-    const deleteMember = (e, id) => {
+    const deleteMember = (e, id) => {   
         e.preventDefault();
-        console.log(id);
         destroy(route('member.delete', id), {
             onSuccess: () => {
                 setActiveMemberId(null);
@@ -301,9 +302,7 @@ export default function Members( { workspace, members, activeMembersStatus } ) {
                                                                 <Link 
                                                                     className="flex items-center gap-1 hover:opacity-50"
                                                                     onClick={(e) => {
-                                                                        setData('role', 'admin')
-                                                                        changeRole(e, member.id, data.role)
-
+                                                                        changeRole(e, member, 'admin');
                                                                     }}
                                                                 >
                                                                     <AdminPanelSettingsIcon/>
@@ -313,7 +312,7 @@ export default function Members( { workspace, members, activeMembersStatus } ) {
                                                                 <Link 
                                                                     className="flex items-center gap-1 hover:opacity-50"
                                                                     onClick={(e) => {
-                                                                        changeRole(e, member.id, 'member')
+                                                                        changeRole(e, member, 'member')
                                                                     }}
                                                                 >
                                                                     <AssignmentIndIcon/>
