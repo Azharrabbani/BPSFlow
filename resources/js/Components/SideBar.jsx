@@ -73,6 +73,8 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
     const [selectedUsers, setSelectedUsers] = useState([]);
 
     const [showSelectMember, setShowSelectMember] = useState(false);
+
+    const [ownerMember, setOwnerMember] = useState(null);
     
     const [showSelectMemberSetting, setShowSelectMemberSetting] = useState(null);
     
@@ -207,8 +209,8 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
         {
             onSuccess: () => {
                 setProjectId(null);
-                setData.name = '';
-                setData.space_id = '';
+                data.name = '';
+                data.space_id = '';
             },
             onError: () => {
                 data.members = [];

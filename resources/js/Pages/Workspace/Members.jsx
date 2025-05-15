@@ -118,7 +118,17 @@ export default function Members( { workspace, members, activeMembersStatus } ) {
     const deleteMember = (e, id) => {
         e.preventDefault();
         console.log(id);
-        destroy(route('member.delete', id));
+        destroy(route('member.delete', id), {
+            onSuccess: () => {
+                setActiveMemberId(null);
+            },
+            onError: () => {
+                console.log("Gagal menghapus member");
+            },
+            onFinish: () => {
+                console.log("Selesai");
+            }
+        });
     };
 
     return(
@@ -292,7 +302,7 @@ export default function Members( { workspace, members, activeMembersStatus } ) {
                                                                     className="flex items-center gap-1 hover:opacity-50"
                                                                     onClick={(e) => {
                                                                         setData('role', 'admin')
-                                                                        changeRole(e, member.id)
+                                                                        changeRole(e, member.id, data.role)
 
                                                                     }}
                                                                 >
@@ -404,7 +414,10 @@ export default function Members( { workspace, members, activeMembersStatus } ) {
                                                     }
                                                 </Link>
                                     
-                                                <Link className="flex items-center gap-1 hover:opacity-50">
+                                                <Link 
+                                                    className="flex items-center gap-1 hover:opacity-50"
+                                                    onClick={(e) => deleteMember(e, member)}
+                                                >
                                                     <PersonRemoveAlt1Icon/>
                                                     Delete
                                                 </Link>

@@ -104,8 +104,6 @@ class Workspace_membersController extends Controller
     {
         $user = Auth::user();
 
-        dd($member);
-
         $member->delete();
 
         $workspace = Workspace_members::where('user_id', $user->id)

@@ -47,8 +47,8 @@ Route::middleware('auth')->group(function () {
     // Route::get('/invite', [WorkspaceController::class, 'sendInvitation'])->name('invitation.send');
     Route::get('/workspace/{workspace}/members', [Workspace_membersController::class, 'index'])->name('workspace.members');
     Route::post('/invite', [Workspace_membersController::class, 'invite'])->name('invitation.accept');
-    Route::post('/role/{workspace_member}', [Workspace_membersController::class, 'changeRole'])->name('role.update');
-    Route::delete('/workspace/{workspace_member}/members', [Workspace_membersController::class, 'deleteMember'])->name('member.delete');
+    Route::post('/role/{member}', [Workspace_membersController::class, 'changeRole'])->name('role.update');
+    Route::delete('/workspace/{member}/members', [Workspace_membersController::class, 'deleteMember'])->name('member.delete');
 
     // Space Route
     Route::post('/space', [SpaceController::class, 'store'])->name('space.store');
