@@ -5,6 +5,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\WorkspaceController;
 use App\Http\Controllers\InboxController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\Space_MembersController;
 use App\Http\Controllers\SpaceController;
 use App\Http\Controllers\Workspace_membersController;
 use App\Models\Space;
@@ -54,6 +55,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/space', [SpaceController::class, 'store'])->name('space.store');
     Route::post('/space/{space}', [SpaceController::class, 'update'])->name('space.update');
     Route::delete('/space/{space}', [SpaceController::class, 'destroy'])->name('space.delete');
+
+    // Space_member Route
+    Route::get('/space_member/{spaceId}', [Space_MembersController::class, 'getSpaceMembers'])->name('space.members');
+    Route::delete('/space_member/{space_member}', [Space_MembersController::class, 'deleteMember'])->name('space.deleteMember');
 
     // Project Route
     Route::post('/project', [ProjectController::class, 'store'])->name('project.store');

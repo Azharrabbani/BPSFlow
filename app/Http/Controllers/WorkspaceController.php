@@ -39,7 +39,6 @@ class WorkspaceController extends Controller
 
         $privateSpaces = $spaces->getPrivateSpaces($activeMembership->workspace_id, $user->id);
 
-
         $getSpaces = array();
         array_push($getSpaces, $publicSpaces, $privateSpaces);
         

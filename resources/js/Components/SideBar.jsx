@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { use, useRef, useState } from 'react';
+import { use, useRef, useState, useEffect } from 'react';
 import { Link, useForm, usePage } from '@inertiajs/react';
 import ModalSpace from '@/Components/spaces/ModalSpace';
 import EditSpace from '@/Components/spaces/EditSpace';
@@ -40,7 +40,7 @@ import CheckOutlinedIcon from '@mui/icons-material/CheckOutlined';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 
 
-export default function Sidebar( { children, workspace, members, activeWorkspace, activeMembersStatus, publicSpaces, privateSpaces, getSpaces }) {
+export default function Sidebar( { children, workspace, members, activeWorkspace, activeMembersStatus, getSpaces }) {
     const user = usePage().props.auth.user;
 
     const workspaceMembers = activeMembersStatus.length;
@@ -95,7 +95,25 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
 
     const [spaceDeleteId, setSpaceDeleteId] = useState(null);
 
+    const [editingSpace, setEditingSpace] = useState(null);
+
+    const [toggleSpaceMember, setToggleSpaceMember] = useState(null);
+
     const [spaceMenu, setSpaceMenu] = useState(null);
+
+    const [toggleDeleteMember, setToggleDeleteMember] = useState(null);
+
+    const [spaceMembers, setSpaceMembers] = useState([]);
+
+    useEffect(() => {
+        if (editingSpace) {
+          if (data.status === 'private') {
+            setShowSelectMemberSetting(editingSpace.id);
+          } else {
+            setShowSelectMemberSetting(null);
+          }
+        }
+    }, [data.status, editingSpace]);
 
     // projects state
     const [projectId, setProjectId] = useState(null);
@@ -178,15 +196,79 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
         });
     };
 
+    // Get Space Member
+    const getSpaceMembers = async (e, spaceId) => {
+        e.preventDefault();
+
+        if (toggleSpaceMember === spaceId) {
+            setToggleSpaceMember(null);
+            setSpaceMembers([]);
+            return;
+        }
+
+        try{
+            const response = await axios.get(route('space.members', spaceId));
+            setSpaceMembers((prev) => ({...prev, [spaceId]: response.data}));
+            setToggleSpaceMember(spaceId);
+        } catch(error) {
+            if (error.response) {
+                console.error("Response error:", error.response.status, error.response.data);
+            } else {
+                console.error("Error:", error.message);
+            }
+        
+        }
+    };
+
+
+
+    // Delete Space Member
+    const deleteMember = (e, space_member) => {
+        e.preventDefault();
+        destroy(route('space.deleteMember', space_member), {
+             onSuccess: () => {
+                setSettingSpace(null);
+                setEditingSpace(null);
+                setSpaceMembers([]);
+                data.name = '';
+                data.status = '';
+                data.members = [];
+                clear();
+            },
+            onError: () => {
+                console.log('Gagal Update Space')
+            },
+            onFinish: () => {
+                console.log('finish')
+            }
+        });
+    }
+
     // Update Space
     const updateSpace = (e, id) => {
         e.preventDefault();
-        post(route('space.update', id));
+        post(route('space.update', id), {
+            onSuccess: () => {
+                setSettingSpace(null);
+                setEditingSpace(null);
+                data.name = '';
+                data.status = '';
+                data.members = [];
+                clear();
+            },
+            onError: () => {
+                console.log('Gagal Update Space')
+            },
+            onFinish: () => {
+                console.log('finish')
+            }
+        });
     };
     
     // Delete Space
     const deleteSpace = (e, id) => {
         e.preventDefault();
+        location.reload();
         destroy(route('space.delete', id), 
         {
             onSuccess: () => {
@@ -240,6 +322,16 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
         } catch(error) {
             console.error('Gagal fetch project:', error);
         }
+    }
+
+    const getAvailable = (spaceId) => {
+        const currentSpaceMembers = spaceMembers[spaceId] || [];
+
+        const membersSpace = currentSpaceMembers.map((sm) => sm.user_id);
+
+        const availableMembers = members.filter((member) => !membersSpace.includes(member.user_id));
+
+        return availableMembers;
     }
 
     // Update Project
@@ -319,6 +411,7 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
     const closeSpaceMenuPopUp = () => {
         setSpaceMenu(false);
     };
+    
 
     return (
          <div className="h-screen flex bg-blue-100">
@@ -604,17 +697,10 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
                                                     <div key={data.id}>
                                                         {data.status === 'owner' ? (
                                                             <div 
-                                                                className="p-2 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors duration-200"
-                                                                onLoad={() => toggleCheckBox(data.user)}
+                                                                className="p-4 rounded-lg cursor-default bg-slate-100 mt-3"
+                                                                
                                                             >
-                                                                <div className="flex items-center space-x-2">
-                                                                    <input 
-                                                                        className="peer appearance-none w-5 h-5 rounded focus:outline-none checked:bg-blue-500 hover:ring hover:ring-blue-600" 
-                                                                        type="checkbox" 
-                                                                        checked={selectedUsers.includes(data.user)}
-                                                                        readOnly
-                                                                        disabled="true"
-                                                                    />                                   
+                                                                <div className="flex items-center space-x-2">                   
                                                                     <img 
                                                                         className="rounded-full" 
                                                                         src={
@@ -627,7 +713,8 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
                                                                         alt="" 
                                                                         width="40"
                                                                     />
-                                                                    <p>{data.user.email}</p>       
+                                                                    <p>{data.user.email}</p>
+                                                                    <span className="bg-sky-100 rounded-lg"><p className="p-1 text-blue-700 font-bold">{data.status}</p></span>       
                                                                 </div>
                                                             </div>
                                                         ) : (
@@ -717,7 +804,13 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
                                                 {toggleWorkspaceMore === space.id && (
                                                     <>
                                                         <SettingsIcon 
-                                                            onClick={() => setSettingSpace(space.id)}
+                                                            onClick={(e) => {
+                                                                setSettingSpace(space.id);
+                                                                setEditingSpace(space);
+                                                                getSpaceMembers(e, space);
+                                                                setData('status', space.status);
+                                                                setData('name', space.name);
+                                                            }}
                                                             className="w-2 hover:bg-[#19324928] rounded-md cursor-pointer"
                                                         />
                                                         <HighlightOffIcon
@@ -731,13 +824,21 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
                                                     onClick={() => setSpaceMenu(space)}
                                                 />
                                             </div>
-
-
-                                                    <EditSpace open={settingSpace === space.id}>
+                                                    <EditSpace 
+                                                        open={settingSpace === space.id} 
+                                                        onClose={() => {
+                                                            setSettingSpace(null);
+                                                            setEditingSpace(null);
+                                                            setSpaceMembers([]);
+                                                            clear();
+                                                        }}
+                                                    >
                                                         <CloseIcon 
                                                             className='absolute right-3 top-4 cursor-pointer hover:opacity-50' 
                                                             onClick={() => {
-                                                                setSettingSpace(null); 
+                                                                setSettingSpace(null);
+                                                                setEditingSpace(null);
+                                                                setSpaceMembers([]);
                                                                 clear();
                                                             }}
                                                         />
@@ -752,29 +853,104 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
                                                                 <label htmlFor="spaceInput" className="mb-1">Space Name</label>
                                                                 <TextInput 
                                                                     placeHolder="ex: Unit Perancangan" 
-                                                                    onChange={(e) =>  setData('name', e.target.value)} 
-                                                                    defaultValue={space.name}
+                                                                    value={data.name} 
+                                                                    onChange={(e) => setData('name', e.target.value)}
                                                                 />
                                                                 {errors.name && <p className="error text-red-500">{errors.name}</p>}
                                                             </div>
+
+                                                            <div 
+                                                                className="flex flex-wrap justify-center gap-4 m-4 overflow-y-auto max-h-[150px]"
+                                                            >
+                                                              {spaceMembers[space] && spaceMembers[space].length > 0 ? (
+                                                                spaceMembers[space].map((spaceMember, index) => 
+                                                                  index === 0 ? (
+                                                                    <div
+                                                                      key={index}
+                                                                      className="bg-white relative shadow-md rounded-lg p-4 w-[120px] text-center cursor-default"
+                                                                
+                                                                    >
+                                                                        <span className="absolute right-1 top-1 bg-sky-100 rounded-lg"><p className="text-sm text-blue-700 font-bold">owner</p></span>
+                                                                        <div className="flex flex-col items-center mt-3">
+                                                                            <img
+                                                                            className="rounded-full mb-2"
+                                                                            src={
+                                                                                spaceMember.user.photo instanceof File
+                                                                                ? URL.createObjectURL(spaceMember.user.photo)
+                                                                                : spaceMember.user.photo
+                                                                                ? `/storage/${spaceMember.user.photo}`
+                                                                                : "https://cdn-icons-png.flaticon.com/512/9815/9815472.png"
+                                                                            }
+                                                                            alt={spaceMember.user.email}
+                                                                            width="50"
+                                                                            height="50"
+                                                                            />
+                                                                            <p className="text-sm font-medium">{spaceMember.user.name}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                ) : 
+                                                                    data.status === 'private' ? (
+                                                                            <div
+                                                                              key={index}
+                                                                              className="bg-white relative shadow-md rounded-lg p-4 w-[120px] text-center cursor-pointer"
+                                                                              onMouseOver={() => setToggleDeleteMember(spaceMember.id)}
+                                                                              onMouseLeave={() => setToggleDeleteMember(null)}
+                                                                              onClick={(e) => deleteMember(e, spaceMember)}
+                                                                            >
+                                                                              {toggleDeleteMember === spaceMember.id ? (
+                                                                                  <span className="absolute right-1 top-1"><HighlightOffIcon className="text-red-600"/></span>
+                                                                              ) : 
+                                                                                  <p></p>
+                                                                              }
+                                                                              <div className="flex flex-col items-center mt-3">
+                                                                                  <img
+                                                                                  className="rounded-full mb-2"
+                                                                                  src={
+                                                                                      spaceMember.user.photo instanceof File
+                                                                                      ? URL.createObjectURL(spaceMember.user.photo)
+                                                                                      : spaceMember.user.photo
+                                                                                      ? `/storage/${spaceMember.user.photo}`
+                                                                                      : "https://cdn-icons-png.flaticon.com/512/9815/9815472.png"
+                                                                                  }
+                                                                                  alt={spaceMember.user.email}
+                                                                                  width="50"
+                                                                                  height="50"
+                                                                                  />
+                                                                                  <p className="text-sm font-medium">{spaceMember.user.name}</p>
+                                                                              </div>
+                                                                            </div>
+                                                                    ) : 
+                                                                        <p></p>
+                                                            )
+                                                              ) : (
+                                                                <p></p>
+                                                              )}
+                                                            </div>
+
                                                         
 
                                                             <div className="mt-[50px] flex justify-between">
-                                                                <div className="">
-                                                                    <h2>Buat Private</h2>
-                                                                    <p className="opacity-50 pr-[50px]">Buat untuk hanya member yang anda izinkan bisa akses</p>
-                                                                </div>
-                                                                <label class="switch relative top-3">
-                                                                    <input type="checkbox"/>
-                                                                    <span 
-                                                                        class="slider" 
-                                                                        onClick={() => {
-                                                                            setData('status', 'private');
-                                                                            setShowSelectMemberSetting(prev => prev === space.id ? null : space.id);
-                                                                        }}
-                                                                    >
-                                                                    </span>
-                                                                </label>
+                                                              <div>
+                                                                <h2>{data.status === 'public' ? 'Buat Private' : 'Buat Public'}</h2>
+                                                                <p className="opacity-50 pr-[50px]">
+                                                                  {data.status === 'public' 
+                                                                    ? 'Buat untuk hanya member yang anda izinkan bisa akses'
+                                                                    : 'Semua Member dapat mengakses'}
+                                                                </p>
+                                                              </div>
+                                                                
+                                                              <label className="switch relative top-3">
+                                                                <input
+                                                                  type="checkbox"
+                                                                  checked={data.status === 'private'}
+                                                                  onChange={(e) => {
+                                                                    const isChecked = e.target.checked;
+                                                                    setData('status', isChecked ? 'private' : 'public');
+                                                                    setShowSelectMemberSetting(isChecked ? space.id : null);
+                                                                  }}
+                                                                />
+                                                                <span className="slider"></span>
+                                                              </label>
                                                             </div>
 
                                                             <div className='flex justify-end mt-3'>
@@ -804,25 +980,21 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
 
                                                                     <div className="overflow-y-auto max-h-[130px]">
                                                                     {members && members.length > 0 ? (
-                                                                        members.filter(({ user }) =>
-                                                                            searchEmail.trim() === ''
-                                                                                ? true
-                                                                                : user.email?.toLowerCase().includes(searchEmail.toLowerCase())
+                                                                        members.filter(({ user }) => {
+                                                                            const isMatch = searchEmail.trim() === '' || user.email?.toLowerCase().includes(searchEmail.toLowerCase());
+                                                                            const isAlreadyMember = (spaceMembers[space] || []).some(member => member.user_id === user.id);
+                                                                            return isMatch && !isAlreadyMember;
+
+                                                                        }
                                                                         )
                                                                         .map((data) => (
                                                                             <div key={data.id}>
                                                                                 {data.status === 'owner' ? (
                                                                                     <div 
-                                                                                        className="p-2 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors duration-200"
-                                                                                        onLoad={() => toggleCheckBox(data.user)}
+                                                                                        className="p-4 rounded-lg cursor-default bg-slate-100 mt-3"
+                                                                                                        
                                                                                     >
-                                                                                        <div className="flex items-center space-x-2">
-                                                                                            <input 
-                                                                                                className="peer appearance-none w-5 h-5 rounded focus:outline-none checked:bg-blue-500 hover:ring hover:ring-blue-600" 
-                                                                                                type="checkbox" 
-                                                                                                checked
-                                                                                                readOnly
-                                                                                            />                                   
+                                                                                        <div className="flex items-center space-x-2">                   
                                                                                             <img 
                                                                                                 className="rounded-full" 
                                                                                                 src={
@@ -835,12 +1007,13 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
                                                                                                 alt="" 
                                                                                                 width="40"
                                                                                             />
-                                                                                            <p>{data.user.email}</p>       
+                                                                                            <p>{data.user.email}</p>
+                                                                                            <span className="bg-sky-100 rounded-lg"><p className="p-1 text-blue-700 font-bold">{data.status}</p></span>       
                                                                                         </div>
                                                                                     </div>
-                                                                                ) : (
+                                                                                ) :  (
                                                                                     <div 
-                                                                                        className="p-2 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors duration-200"
+                                                                                        className="p-2 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors duration-200 mt-2"
                                                                                         onClick={() => toggleCheckBox(data.user)}
                                                                                     >
                                                                                         <div className="flex items-center space-x-2">
@@ -865,6 +1038,7 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
                                                                                             <p>{data.user.email}</p>            
                                                                                         </div>
                                                                                     </div>
+                                                                                    
                                                                                 )}         
                                                                             </div>
                                                                         ))
@@ -1127,194 +1301,8 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
 
 
                         </ul>
-
-                        {/* Private Spaces */}
-                        {/* <p className="text-sm text-gray-400 px-3 mt-4">Private</p>
-                        <hr />
-                        <ul className="w-full justify-center max-h-[150px] overflow-y-auto">
-
-                                {privateSpaces.map((space) => (
-                                        <li 
-                                            className="py-3 flex hover:bg-sky-400 hover:text-white hover:rounded-sm transition-colors duration-200 cursor-pointer space-x-0"
-                                            key={space.id}
-                                        >
-                                            <div className="icon-menu"><DesktopWindowsOutlinedIcon/></div>
-                                            <div className="menu-item">{space.space.name}</div>
-                                            <div className="flex px-3 gap-2">
-                                                <SettingsIcon 
-                                                    onClick={() => setSettingSpace(space.space.id)}
-                                                    className="w-2 hover:bg-[#19324928] rounded-md cursor-pointer"
-                                                />
-                                                <HighlightOffIcon
-                                                    onClick={(e) => deleteSpace(e, space.space)}
-                                                    className="w-2 hover:bg-[#19324928] rounded-md cursor-pointer"
-                                                />
-                                                <AddOutlinedIcon className="w-2 hover:bg-[#19324928] rounded-md cursor-pointer"/>
-                                            </div>
-                                           
-                                               
-                                                    <EditSpace open={settingSpace === space.space.id} onClose={() => setSettingSpace(null)}>
-                                                        <CloseIcon 
-                                                            className='absolute right-3 top-4 cursor-pointer hover:opacity-50' 
-                                                            onClick={() => {
-                                                                setSettingSpace(null); 
-                                                                clear();
-                                                            }}
-                                                        />
-
-                                                        <div className="mt-1">
-                                                            <h2 className="text-xl pb-1">Space Setting</h2>
-                                                            <p className="opacity-50">Space mewakili bagian, subbagian, atau kelompok kerja, lengkap dengan daftar tugas, alur pelaksanaan</p>
-                                                        </div>
-
-                                                        <form onSubmit={(e) => updateSpace(e, space)}>
-                                                            <div className="flex flex-col mt-4">
-                                                                <label htmlFor="spaceInput" className="mb-1">Space Name</label>
-                                                                <TextInput 
-                                                                    placeHolder="ex: Unit Perancangan" 
-                                                                    onChange={(e) =>  setData('name', e.target.value)} 
-                                                                    defaultValue={space.space.name}
-                                                                />
-                                                                {errors.name && <p className="error text-red-500">{errors.name}</p>}
-                                                            </div>
-                                                        
-
-                                                            <div className="mt-[50px] flex justify-between">
-                                                                <div className="">
-                                                                    <h2>Buat Private</h2>
-                                                                    <p className="opacity-50 pr-[50px]">Buat untuk hanya member yang anda izinkan bisa akses</p>
-                                                                </div>
-                                                                <label class="switch relative top-3">
-                                                                    <input type="checkbox"/>
-                                                                    <span 
-                                                                        class="slider" 
-                                                                        onClick={() => {
-                                                                            setData('status', 'private');
-                                                                            setShowSelectMember(prev => prev === space.id ? null : space.id);
-                                                                        }}
-                                                                    >
-                                                                    </span>
-                                                                </label>
-                                                            </div>
-
-                                                            <div className='flex justify-end mt-3'>
-                                                            {data.name === space.space.name || data.name.length == 0
-                                                                ?   <PrimaryButton 
-                                                                        className="cursor-not-allowed" 
-                                                                        disabled
-                                                                    >
-                                                                        Update
-                                                                    </PrimaryButton> 
-                                                                :   <PrimaryButton disabled={processing}>
-                                                                        Update
-                                                                    </PrimaryButton> }
-
-                                                            </div>
-
-                                                            {showSelectMember === space.id && 
-                                                                <div className="mt-2">
-                                                                    <h2 className="opacity-50">Select Member yang hanya boleh mengakses</h2>
-                                                                    <hr/>
-
-                                                                    <div className="flex flex-col mt-4">
-                                                                        <TextInput 
-                                                                            value={searchEmail}
-                                                                            onChange={e => {
-                                                                                setData('email', e.target.value);
-                                                                                setSearchEmail(e.target.value)  
-                                                                            }}
-                                                                            type="email"
-                                                                            placeHolder="Cari atau masukkan email yang akan diberikan akses"
-                                                                        />
-                                                                        {errors.email && <p className="text-red-600">{errors.email}</p>}
-                                                                        {errors.user && <p className="text-red-600">{errors.user}</p>}
-                                                                    </div>
-
-                                                                    <div className="overflow-y-auto max-h-[130px]">
-                                                                        {members && members.length > 0 ? (
-                                                                            members.filter(({ user }) =>
-                                                                                searchEmail.trim() === ''
-                                                                                    ? true
-                                                                                    : user.email?.toLowerCase().includes(searchEmail.toLowerCase())
-                                                                            )
-                                                                            .map((data) => (
-                                                                                <div key={data.id}>
-                                                                                    {data.status === 'owner' ? (
-                                                                                        <div 
-                                                                                            className="p-2 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors duration-200"
-                                                                                            onLoad={() => toggleCheckBox(data.user)}
-                                                                                        >
-                                                                                            <div className="flex items-center space-x-2">
-                                                                                                <input 
-                                                                                                    className="peer appearance-none w-5 h-5 rounded focus:outline-none checked:bg-blue-500 hover:ring hover:ring-blue-600" 
-                                                                                                    type="checkbox" 
-                                                                                                    checked
-                                                                                                    readOnly
-                                                                                                />                                   
-                                                                                                <img 
-                                                                                                    className="rounded-full" 
-                                                                                                    src={
-                                                                                                        data.user.photo instanceof File 
-                                                                                                            ? URL.createObjectURL(data.user.photo) 
-                                                                                                            : data.user.photo
-                                                                                                                ? `/storage/${data.user.photo}` 
-                                                                                                                : 'https://cdn-icons-png.flaticon.com/512/9815/9815472.png'
-                                                                                                    } 
-                                                                                                    alt="" 
-                                                                                                    width="40"
-                                                                                                />
-                                                                                                <p>{data.user.email}</p>       
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    ) : (
-                                                                                        <div 
-                                                                                            className="p-2 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors duration-200"
-                                                                                            onClick={() => toggleCheckBox(data.user)}
-                                                                                        >
-                                                                                            <div className="flex items-center space-x-2">
-                                                                                                <input 
-                                                                                                    className="peer appearance-none w-5 h-5 rounded focus:outline-none checked:bg-blue-500 hover:ring hover:ring-blue-600" 
-                                                                                                    type="checkbox" 
-                                                                                                    checked={selectedUsers.includes(data.user)}
-                                                                                                    readOnly
-                                                                                                />                                   
-                                                                                                <img 
-                                                                                                    className="rounded-full" 
-                                                                                                    src={
-                                                                                                        data.user.photo instanceof File 
-                                                                                                            ? URL.createObjectURL(data.user.photo) 
-                                                                                                            : data.user.photo
-                                                                                                                ? `/storage/${data.user.photo}` 
-                                                                                                                : 'https://cdn-icons-png.flaticon.com/512/9815/9815472.png'
-                                                                                                    } 
-                                                                                                    alt="" 
-                                                                                                    width="40"
-                                                                                                />
-                                                                                                <p>{data.user.email}</p>            
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    )}         
-                                                                                </div>
-                                                                            ))
-                                                                            ): <p></p>
-                                                                        }
-                                                                        
-                                                                    </div>
-                                                                </div>
-                                                            }
-                                                        </form>
-                                                    </EditSpace>
-                                             
-                                             
-                                        </li>   
-                                    ))   
-                                }
-                        </ul> */}
-
-                       
                     </div>
                     
-
                     {/* Sidebar bottom menu */}
                     <div className="flex absolute border-t-2 border-gray-300 bottom-0 w-full justify-start divide-x-2">
                         <Link

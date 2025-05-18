@@ -6,7 +6,7 @@ export default function EditWorkspace( { open, onClose, children} ) {
     return ReactDom.createPortal(
         <div 
             onClick={onClose} 
-            className={`fixed inset-0 flex justify-center items-center bg-black/20 transition-colors ${open ? "visible" : "invisible"}`}
+            className={`fixed z-50 inset-0 flex justify-center items-center bg-black/20 transition-colors ${open ? "visible" : "invisible"}`}
 
         >
             
@@ -14,7 +14,7 @@ export default function EditWorkspace( { open, onClose, children} ) {
             <div 
                 onClick={(e) => e.stopPropagation()}
                 className={`
-                bg-white rounded-xl shadow p-6 transition-all w-[600px] min-h-[350px]
+                bg-white absolute top-10 rounded-xl shadow p-6 transition-all w-[600px] min-h-[350px]
                 ${open ? "scale-100 opacity-100" : "scale-125 opacity-0"}
                 `}>
                 {children}  

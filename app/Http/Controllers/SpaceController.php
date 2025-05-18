@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Validation\ValidationException;
 
+use function PHPUnit\Framework\isArray;
+
 class SpaceController extends Controller
 {   
     public function store(SpaceRequest $request) 
@@ -47,13 +49,29 @@ class SpaceController extends Controller
         }
 
         $space_member = new Space_MembersController();
-        $space_member->store($dataSpaceMember);
+        $space_member->store($dataSpaceMember, $space->status);
         return Redirect::route('dashboard');
     }
 
-    public function update(Request $request, Space $space)
+    public function update(SpaceRequest $request, Space $space)
     {
-        dd($request->all());
+        $data = $request->validated();
+
+        $space->update([
+            'name' => $data['name'],
+            'status' => $data['status'],
+        ]);
+
+        if (isset($data['members']) && is_array($data['members'])) {
+            foreach($data['members'] as $userId) {
+                Space_members::create([
+                    'space_id' => $space->id,
+                    'user_id' => $userId['id'],
+                ]);
+            }
+        }
+
+        return Redirect::route('dashboard');
     }
 
     public function destroy(Space $space)
