@@ -7,13 +7,13 @@ import TextInput from './TextInput';
 import PrimaryButton from './PrimaryButton';
 import Workspace from '@/Components/workspaces/Workspace';
 import CreateWorkspace from '@/Components/workspaces/CreateWorkspace';
-import SpaceMenu from '@/Components/spaces/spaceMenu';
-import ModalProject from '@/Components/projects/ModalProject';
-import ConfirmDeleteSpace from '@/Components/spaces/ConfirmDeleteSpace';
-import ProjectSetting from '@/Components/projects/ProjectSetting';
-import ConfirmDeleteProject from '@/Components/projects/ConfirmDeleteProject';
-import EditProject from '@/Components/projects/EditProject';
+import ModalProject from '@/Components/modal/CreateModal';
+import ConfirmDeleteModal from '@/Components/modal/ConfirmDeleteModal';
+import ProjectSetting from '@/Components/modal/SettingModal';
+import EditProject from '@/Components/modal/EditModal';
 import SecondaryButton from './SecondaryButton';
+import Menu from '@/Components/modal/Menu';
+import CreateModal from '@/Components/modal/CreateModal';
 
 
 // icons
@@ -38,6 +38,9 @@ import DriveFileMoveOutlineIcon from '@mui/icons-material/DriveFileMoveOutline';
 import FolderOpenOutlinedIcon from '@mui/icons-material/FolderOpenOutlined';
 import CheckOutlinedIcon from '@mui/icons-material/CheckOutlined';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
+import FormatListBulletedOutlinedIcon from '@mui/icons-material/FormatListBulletedOutlined';
+import SettingModal from '@/Components/modal/SettingModal';
+import EditModal from '@/Components/modal/EditModal';
 
 
 export default function Sidebar( { children, workspace, members, activeWorkspace, activeMembersStatus, getSpaces }) {
@@ -56,6 +59,7 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
         role: 'member',
         user_id: user.id,
         space_id: '',
+        project_id: '',
         workspace_id: activeWorkspace.id,
         status: 'public',
         members: [],
@@ -118,9 +122,11 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
     // projects state
     const [projectId, setProjectId] = useState(null);
 
-    const [toggleProjects, setToggleProjects] = useState(null);    
-
+    const [toggleProjects, setToggleProjects] = useState(null);   
+    
     const [projectMenu, setProjectMenu] = useState(null);
+
+    const [projectSetting, setProjectSetting] = useState(null);
 
     const [confirmDeleteProject, setConfirmDeleteProject] = useState(null);
 
@@ -129,6 +135,22 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
     const [editProjectid, setEditProjectId] = useState(null);
 
     const [projects, setProjects] = useState([]);
+
+    // task state
+    const [taskId, setTaskId] = useState(null);
+
+    const [toggleTasks, setToggleTasks] = useState(null);
+
+    const [taskSetting, setTaskSetting] = useState(null);
+
+    const [confirmDeleteTask, setConfirmDeleteTask] = useState(null);
+
+    const [editTask, setEditTask] = useState(null);
+
+    const [inputValueTask, setInputValueTask] = useState(null);
+
+    const [tasks, setTasks] = useState([]);
+
 
 
     // Method
@@ -359,7 +381,7 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
             onSuccess: () => {
                 setToggleProjects(null);
                 setConfirmDeleteProject(null);
-                setProjectMenu(null);
+                setProjectSetting(null);
             },
             onError: () => {
                 console.log('Gagal Menghapus project');
@@ -369,6 +391,70 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
             }
         })
     }
+
+    // Add Task
+    const addTask = (e) => {
+        e.preventDefault();
+
+        post(route('task.store'));
+    }
+
+    // Get Tasks
+    const getTasks = async (e, projectId) => {
+        e.preventDefault();
+
+        if (toggleTasks === projectId) {
+            setToggleTasks(null);
+            setTasks([]);
+            return;
+        }
+
+        try{
+            const response = await axios.get(route('task.get', projectId));
+            setTasks((prev) => ({ ...prev, [projectId]: response.data }));
+            setToggleTasks(projectId);
+        } catch(error) {
+            console.error('Gagal fetch project:', error);
+        }
+    }
+
+    // Update Task
+    const updateTask = (e, id) => {
+        e.preventDefault();
+
+        post(route('task.update', id), {
+            onSuccess: () => {
+                setEditTask(null);
+                setToggleTasks(null);
+            },
+            onError: () => {
+                console.log('Gagal update task');
+            },
+            onFinish: () => {
+                console.log('selesai');
+            }
+        });
+    }
+
+    // Delete Task
+    const deleteTask = (e, id) => {
+        e.preventDefault();
+
+        destroy(route('task.delete', id), {
+            onSuccess: () => {
+                setToggleTasks(null);
+                setConfirmDeleteTask(null);
+                setTaskSetting(null);
+            },
+            onError: () => {
+                console.log('Gagal Menghapus task');
+            },
+            onFinish: () => {
+                console.log('selesai');
+            }
+        })
+    }
+
 
     // Clear search input
     const clear = (e) => {
@@ -416,13 +502,13 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
     return (
          <div className="h-screen flex bg-blue-100">
             {/* Sidebar Container */}
-            <nav className="fixed md:relative z-10 h-screen md:h-full w-[260px] bg-sky-600">
+            <nav className="fixed md:relative z-10 h-screen md:h-full w-[290px] bg-sky-600">
                 {/* Sidebar Header */}
                 <div 
                     className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-7 py-3 hover:cursor-pointer hover:bg-sky-700"
                     onClick={() => setOpenWorkplace(true)}
                 >
-                    <div className="header-sidebar flex h-[70px] items-center justify-start gap-0 px-2">
+                    <div className="header-sidebar flex h-[70px] items-center justify-center gap-0 px-2">
                         <Link href={route('dashboard')} className="bg-white px-[8px] py-[10px] rounded-full w-[60px]">
                             <img src="https://upload.wikimedia.org/wikipedia/commons/2/28/Lambang_Badan_Pusat_Statistik_%28BPS%29_Indonesia.svg" alt="" width="65"/>
                         </Link>
@@ -598,9 +684,8 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
                             </div>
                             : 
                             <>
-                              
                                     <p className="text-sm text-gray-800">Spaces</p>
-                                    <div className="ml-[134px] space-x-2">
+                                    <div className="ml-[163px] space-x-2">
                                         <SearchOutlinedIcon 
                                                 className="hover:text-blue-500 rounded-md cursor-pointer"
                                                 onClick={() => handleClick_SearchSpace()}
@@ -611,7 +696,6 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
                                             className="hover:text-green-600 rounded-md cursor-pointer"
                                         />
                                     </div>
-                               
                             </>
                         } 
                         
@@ -772,7 +856,7 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
                                 .map((space) => (
                                     <>
                                         <li 
-                                            className="py-3 flex items-center hover:bg-sky-400 hover:text-white hover:rounded-sm transition-colors duration-200 cursor-pointer space-x-0"
+                                            className="py-3 flex items-center hover:bg-sky-400 hover:text-white hover:rounded-sm transition-colors duration-200 cursor-pointer"
                                             key={space.id}
                                             onMouseOver={() => {
                                                 setToggleWorkspaceMore(space.id);
@@ -1053,44 +1137,89 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
                                                     </EditSpace>                                        
                                         </li>     
 
-                                        <div>
+                                        <div className="ml-1">
                                                 {toggleProjects === space.id && (
                                                     <ul>
                                                         {(projects[space.id] && projects[space.id].length > 0) ? (
                                                             projects[space.id].map((project) => (
-                                                                <li 
-                                                                    className="p-3 ml-3 flex justify-between hover:bg-green-400 hover:text-white rounded-md transition-colors duration-200 cursor-pointer"
-                                                                    key={project.id}
-                                                                    onMouseOver={() => {
-                                                                        setToggleProjectMore(space.id)
-                                                                    }}
-                                                                    onMouseLeave={() => {
-                                                                        setToggleProjectMore(null)
-                                                                    }}
-                                                                    
-                                                                >
-                                                                    <div className="flex items-center gap-2">
-                                                                        <FolderOpenOutlinedIcon/>
-                                                                        <p>{project.name}</p>
+                                                                <>
+                                                                    <li 
+                                                                        className="p-3 ml-4 flex justify-between hover:bg-green-400 hover:text-white rounded-md transition-colors duration-200 cursor-pointer"
+                                                                        key={project.id}
+                                                                        onMouseOver={() => {
+                                                                            setToggleProjectMore(space.id)
+                                                                        }}
+                                                                        onMouseLeave={() => {
+                                                                            setToggleProjectMore(null)
+                                                                        }}
                                                                         
-                                                                        
-                                                                    </div>
-
-                                                                    <div className="flex space-x-1">
+                                                                    >
                                                                         {toggleProjectMore === space.id ? (
-                                                                            <>
-                                                                                <MoreHorizIcon 
-                                                                                    className="hover:bg-[#fffdfd88] rounded-md cursor-pointer"
-                                                                                    onClick={() => setProjectMenu(project)}
+                                                                            <div className="flex items-center gap-2">
+                                                                                <KeyboardArrowDownIcon
+                                                                                    className="hover:bg-[#19324928] rounded-md"
+                                                                                    onClick={(e) => {
+                                                                                        setToggleTasks((toggleTasks) => !toggleTasks);
+                                                                                        getTasks(e, project.id);
+                                                                                    }}
                                                                                 />
-                                                                                <AddOutlinedIcon className="hover:bg-[#fffdfd88] rounded-md cursor-pointer"/>
-                                                                            </>
-
-                                                                        ):
-                                                                            <AddOutlinedIcon className="hover:bg-[#fffdfd88] rounded-md cursor-pointer"/>
+                                                                                <p>{project.name}</p>
+                                                                            </div>
+                                                                        ) : 
+                                                                            <div className="flex items-center gap-2">
+                                                                                <FolderOpenOutlinedIcon/>
+                                                                                <p>{project.name}</p>
+                                                                            </div>
                                                                         }
+
+                                                                        <div className="flex space-x-1">
+                                                                            {toggleProjectMore === space.id ? (
+                                                                                <>
+                                                                                    <MoreHorizIcon 
+                                                                                        className="hover:bg-[#fffdfd88] rounded-md cursor-pointer"
+                                                                                        onClick={() => setProjectSetting(project)}
+                                                                                    />
+                                                                                    <AddOutlinedIcon 
+                                                                                        className="hover:bg-[#fffdfd88] rounded-md cursor-pointer"
+                                                                                        onClick={() => setProjectMenu(project)}
+                                                                                    />
+                                                                                </>
+
+                                                                            ):
+                                                                                <AddOutlinedIcon className="hover:bg-[#fffdfd88] rounded-md cursor-pointer"/>
+                                                                            }
+                                                                        </div>
+                                                                    </li>
+                                                                
+                                                                    <div className="ml-3">
+                                                                        {toggleTasks === project.id && (
+                                                                            <ul>
+                                                                                {tasks[project.id] && tasks[project.id].length > 0 ? (
+                                                                                    tasks[project.id].map((task) => (
+                                                                                        <li
+                                                                                            className="p-3 ml-3 flex justify-between hover:bg-orange-400 hover:text-white rounded-md transition-colors duration-200 cursor-pointer"
+                                                                                            key={project.id}
+                                                                                        >
+                                                                                            <div className="flex items-center gap-2">
+                                                                                                <FormatListBulletedOutlinedIcon/>
+                                                                                                <p>{task.name}</p>
+                                                                                            </div>
+
+                                                                                            <MoreHorizIcon 
+                                                                                                className="hover:bg-[#19324928] rounded-md cursor-pointer"
+                                                                                                onClick={() => setTaskSetting(task)}
+                                                                                            />
+                                                                                        </li>
+                                                                                    ))
+                                                                                ) : 
+                                                                                    <li className="text-gray-400 italic p-3 ml-3">Tidak ada task</li>
+                                                                                }
+                                                                            </ul>
+                                                                            
+                                                                        )}
                                                                     </div>
-                                                                </li>
+                                                                </>
+
                                                             ))
                                                         ) : (
                                                             <li className="text-gray-400 italic p-3 ml-3">Tidak ada project</li>
@@ -1103,34 +1232,9 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
                                     )) : <p></p>
                                 }
 
-                                <SpaceMenu open={spaceMenu} onClose={() => setSpaceMenu(null)}>
-                                    <p className="mt-[-12px] text-sm opacity-50">Membuat</p>
-                                    <hr />
-                                    <div className="mt-5 space-y-4">
-                                        <div 
-                                            className="w-full cursor-pointer hover:bg-green-300 p-3 rounded-lg"
-                                            onClick={() => {
-                                                setProjectId(spaceMenu);
-                                                setSpaceMenu(null);
-                                            }}
-                                        >
-                                            <div className="flex space-x-1">
-                                                <h2>Project</h2>
-                                                <AccountTreeOutlinedIcon className="text-green-500"/>
-                                            </div>
-                                            <p className="text-sm opacity-75 p-2">mengelola tugas dan timeline dalam satu tempat</p>
-                                        </div>
-                                        <div className="w-full cursor-pointer hover:bg-blue-300 p-3 rounded-lg">
-                                            <div className="flex space-x-1">
-                                                <h2>Doc</h2>
-                                                <ArticleOutlinedIcon className="text-blue-700"/>
-                                            </div>
-                                            <p className="text-sm opacity-75 p-2">Ruang untuk menulis hal penting untuk tim</p>
-                                        </div>
-                                    </div>
-                                </SpaceMenu>
 
-                                <ConfirmDeleteSpace open={spaceDeleteId} onClose={() => setSpaceDeleteId(null)}>
+                                {/* Space */}
+                                 <ConfirmDeleteModal open={spaceDeleteId} onClose={() => setSpaceDeleteId(null)}>
                                     <div className="p-5">
                                         <div className="rounded-md flex justify-center mb-5">
                                             <img src="https://t3.ftcdn.net/jpg/06/02/35/80/360_F_602358067_MTaipFpj2ioPKAYXA4wEpc6vu5P9QCfb.jpg" alt="" width={"100"}/>
@@ -1159,9 +1263,38 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
                                             </>
                                         )}
                                     </div>
-                                </ConfirmDeleteSpace>
+                                </ConfirmDeleteModal>
 
-                                <ModalProject open={projectId} onClose={() => setProjectId(null)}>
+                                {/* Space Menu */}
+                                <Menu open={spaceMenu} onClose={() => setSpaceMenu(null)}>
+                                    <p className="mt-[-12px] text-sm opacity-50">Membuat</p>
+                                    <hr />
+                                    <div className="mt-5 space-y-4">
+                                        <div 
+                                            className="w-full cursor-pointer hover:bg-green-300 p-3 rounded-lg"
+                                            onClick={() => {
+                                                setProjectId(spaceMenu);
+                                                setSpaceMenu(null);
+                                            }}
+                                        >
+                                            <div className="flex space-x-1">
+                                                <h2>Project</h2>
+                                                <AccountTreeOutlinedIcon className="text-green-500"/>
+                                            </div>
+                                            <p className="text-sm opacity-75 p-2">mengelola tugas dan timeline dalam satu tempat</p>
+                                        </div>
+                                        <div className="w-full cursor-pointer hover:bg-blue-300 p-3 rounded-lg">
+                                            <div className="flex space-x-1">
+                                                <h2>Doc</h2>
+                                                <ArticleOutlinedIcon className="text-blue-700"/>
+                                            </div>
+                                            <p className="text-sm opacity-75 p-2">Ruang untuk menulis hal penting untuk tim</p>
+                                        </div>
+                                    </div>
+                                </Menu>
+                                
+                                {/* Create Project */}
+                                <CreateModal open={projectId} onClose={() => setProjectId(null)}>
                                     <CloseIcon className='absolute right-3 top-4 cursor-pointer hover:opacity-50' onClick={() => setProjectId(null)}/>
                                     <div className="mt-1 cursor-default">
                                         <h2 className="text-xl pb-1">Buat Project Baru</h2>
@@ -1190,18 +1323,18 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
                                             </PrimaryButton>
                                         </form>
                                     )}
-                                </ModalProject>
+                                </CreateModal>
 
-                                <ProjectSetting open={projectMenu} onClose={() => setProjectMenu(null)}>
-                                    {projectMenu && (
+                                <SettingModal open={projectSetting} onClose={() => setProjectSetting(null)}>
+                                    {projectSetting && (
                                         <div className="space-y-3">
-                                            <p><b>{projectMenu['name']}</b></p>
+                                            <p><b>{projectSetting['name']}</b></p>
                                             <hr/>
                                             <div 
                                                 className="flex space-x-1 hover:bg-sky-300 hover:text-white p-2 rounded-lg cursor-pointer transition-colors duration-200"
                                                 onClick={() => {
-                                                    setEditProjectId(projectMenu);
-                                                    setProjectMenu(null);
+                                                    setEditProjectId(projectSetting);
+                                                    setProjectSetting(null);
                                                 }}
                                             >
                                                 <EditIcon/>
@@ -1209,7 +1342,7 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
                                             </div>
                                             <div 
                                                 className="flex space-x-1 hover:bg-sky-300 hover:text-white p-2 rounded-lg cursor-pointer transition-colors duration-200"
-                                                onClick={() => setConfirmDeleteProject(projectMenu)}
+                                                onClick={() => setConfirmDeleteProject(projectSetting)}
                                             >
                                                 <DeleteIcon/>
                                                 <p>Delete</p>
@@ -1221,9 +1354,9 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
                                         </div>
 
                                     )}
-                                </ProjectSetting>
+                                </SettingModal>
 
-                                <EditProject open={editProjectid} onClose={() => setEditProjectId(null)}>
+                                <EditModal open={editProjectid} onClose={() => setEditProjectId(null)}>
                                     {editProjectid && (
                                         <div className="space-y-3 p-2">
                                             <p className="text-center">Edit: <b>{editProjectid['name']}</b></p>
@@ -1245,14 +1378,13 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
                                                 {editProjectid.name === inputValueProject ? (
                                                     <PrimaryButton 
                                                         className="bg-blue-400 hover:bg-sky-500 transition-colors duration-200"
-                                                        disabled
                                                         onClick={(e) => updateProject(e, editProjectid['id'])}
                                                     >   
                                                         Save
                                                     </PrimaryButton>
                                                 ): 
                                                     <PrimaryButton 
-                                                        className="bg-blue-400 hover:bg-sky-500 transition-colors duration-200"
+                                                        className="bg-blue-400 hover:bg-sky-500 transition-colors duration-200 cursor-not-allowed"
                                                         onClick={(e) => updateProject(e, editProjectid['id'])}
                                                     >   
                                                         Save
@@ -1262,9 +1394,9 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
                                         </div>
 
                                     )}
-                                </EditProject>
+                                </EditModal>
                                 
-                                <ConfirmDeleteProject open={confirmDeleteProject} onClose={() => setConfirmDeleteProject(null)}>
+                                <ConfirmDeleteModal open={confirmDeleteProject} onClose={() => setConfirmDeleteProject(null)}>
                                     <div className="p-5">
                                         <div className="rounded-md flex justify-center mb-5">
                                             <img src="https://t3.ftcdn.net/jpg/06/02/35/80/360_F_602358067_MTaipFpj2ioPKAYXA4wEpc6vu5P9QCfb.jpg" alt="" width={"100"}/>
@@ -1295,7 +1427,174 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
                                             </>
                                         )}
                                     </div>
-                                </ConfirmDeleteProject>
+                                </ConfirmDeleteModal>
+
+                                {/* Project Menu */}
+                                <Menu open={projectMenu} onClose={() => setProjectMenu(null)}>
+                                    <p className="mt-[-12px] text-sm opacity-50">Membuat</p>
+                                    <hr />
+                                    <div className="mt-5 space-y-4">
+                                        <div 
+                                            className="w-full cursor-pointer hover:bg-orange-200 p-3 rounded-lg"
+                                            onClick={() => {
+                                                setTaskId(projectMenu);
+                                                setProjectMenu(null);
+                                            }}
+                                        >
+                                            <div className="flex space-x-1">
+                                                <h2>Task</h2>
+                                                <FormatListBulletedOutlinedIcon className="text-orange-600"/>
+                                            </div>
+                                            <p className="text-sm opacity-75 p-2">Buat task yang perlu ditindaklanjuti oleh anggota workspace</p>
+                                        </div>
+                                        <div className="w-full cursor-pointer hover:bg-blue-300 p-3 rounded-lg">
+                                            <div className="flex space-x-1">
+                                                <h2>Doc</h2>
+                                                <ArticleOutlinedIcon className="text-blue-700"/>
+                                            </div>
+                                            <p className="text-sm opacity-75 p-2">Ruang untuk menulis hal penting untuk tim</p>
+                                        </div>
+                                    </div>
+                                </Menu>
+
+                                 {/* Task  */}
+                                {/* Create Task */}
+                                <CreateModal open={taskId} onClose={() => setTaskId(null)}>
+                                    <CloseIcon className='absolute right-3 top-4 cursor-pointer hover:opacity-50' onClick={() => setTaskId(null)}/>
+                                    <div className="mt-1 cursor-default">
+                                        <h2 className="text-xl pb-1">Buat Task</h2>
+                                        <p className="opacity-50">Gunakan task untuk mengelola tugas yang akan ditugaskan kepada para member yang ada di workspace</p>
+                                    </div>
+
+                                    {taskId && (
+                                        <form onSubmit={(e) => {
+                                                addTask(e, taskId.id);
+                                                setToggleProjects(null);
+                                            }}
+                                        >
+                                            <div className="flex flex-col mt-4">
+                                                <label htmlFor="spaceInput" className="mb-1">Task Name</label>
+                                                <TextInput 
+                                                    placeHolder="ex: Update UI Laporan Bulanan" 
+                                                    onChange={(e) => {
+                                                        setData('name', e.target.value);
+                                                        setData('project_id',  taskId.id);
+                                                    }} 
+                                                    value={data.name}/>
+                                                {errors.name && <p className="error text-red-500">{errors.name}</p>}
+                                            </div>
+                                            <PrimaryButton className="absolute bottom-7 right-8">
+                                                Create
+                                            </PrimaryButton>
+                                        </form>
+                                    )}
+                                </CreateModal>
+
+                                <SettingModal open={taskSetting} onClose={() => setTaskSetting(null)}>
+                                    {taskSetting && (
+                                        <div className="space-y-3">
+                                            <p><b>{taskSetting['name']}</b></p>
+                                            <hr/>
+                                            <div 
+                                                className="flex space-x-1 hover:bg-sky-300 hover:text-white p-2 rounded-lg cursor-pointer transition-colors duration-200"
+                                                onClick={() => {
+                                                    setEditTask(taskSetting);
+                                                    setTaskSetting(null);
+                                                }}
+                                            >
+                                                <EditIcon/>
+                                                <p>Rename</p>
+                                            </div>
+                                            <div 
+                                                className="flex space-x-1 hover:bg-sky-300 hover:text-white p-2 rounded-lg cursor-pointer transition-colors duration-200"
+                                                onClick={() => setConfirmDeleteTask(taskSetting)}
+                                            >
+                                                <DeleteIcon/>
+                                                <p>Delete</p>
+                                            </div>
+                                        </div>
+
+                                    )}
+                                </SettingModal>
+
+                                <EditModal open={editTask} onClose={() => setEditTask(null)}>
+                                    {editTask && (
+                                        <div className="space-y-3 p-2">
+                                            <p className="text-center">Edit: <b>{editTask['name']}</b></p>
+                                            <hr/>
+                                            
+                                            <div className="flex justify-center pb-3">
+                                                <input 
+                                                    className="h-[30px] rounded-md border-none bg-slate-100 p-5"
+                                                    defaultValue={editTask['name']}
+                                                    onChange={(e) => {
+                                                        setInputValueTask(e.target.value)
+                                                        setData('name', e.target.value);
+                                                        setData('project_id', editTask['project_id'])
+                                                    }}
+                                                    type="text" 
+                                                />
+                                            </div>
+                                            <div className="flex justify-center space-x-3">
+                                                {editTask.name === inputValueTask ? (
+                                                    <PrimaryButton 
+                                                        className="bg-blue-400 hover:bg-sky-500 transition-colors duration-200"
+
+                                                        onClick={(e) => updateTask(e, editTask['id'])}
+                                                    >   
+                                                        Save
+                                                    </PrimaryButton>
+                                                ): 
+                                                    <PrimaryButton 
+                                                        className="bg-blue-400 hover:bg-sky-500 transition-colors duration-200"
+                                                        onClick={(e) => updateTask(e, editTask['id'])}
+                                                       
+                                                    >   
+                                                        Save
+                                                    </PrimaryButton>
+                                                }
+                                            </div>
+                                        </div>
+
+                                    )}
+                                </EditModal>    
+
+                                <ConfirmDeleteModal open={confirmDeleteTask} onClose={() => setConfirmDeleteTask(null)}>
+                                    <div className="p-5">
+                                        <div className="rounded-md flex justify-center mb-5">
+                                            <img src="https://t3.ftcdn.net/jpg/06/02/35/80/360_F_602358067_MTaipFpj2ioPKAYXA4wEpc6vu5P9QCfb.jpg" alt="" width={"100"}/>
+                                        </div>
+                                        {confirmDeleteTask && (
+                                            <>
+                                                <h1 className="text-red-600 cursor-default">Delete: <b><u>{confirmDeleteTask.name}</u></b></h1>
+                                                <p className="cursor-default">
+                                                    Tindakan ini akan menghapus seluruh data yang terkait dengan proyek ini, termasuk tugas, dokumen, dan konten lainnya secara permanen.
+                                                </p>
+
+                                                <div className="flex justify-center space-x-5 mt-10">
+                                                    <SecondaryButton 
+                                                        className="hover:bg-slate-200"
+                                                        onClick={() => setConfirmDeleteTask(null)}
+                                                    >
+                                                        Cancel
+                                                    </SecondaryButton>
+                                                    <PrimaryButton 
+                                                        className="bg-red-500 hover:bg-red-600"
+                                                        onClick={(e) => {
+                                                            deleteTask(e, confirmDeleteTask);
+                                                        }} 
+                                                    >
+                                                        Delete
+                                                    </PrimaryButton>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                </ConfirmDeleteModal>
+
+                                
+
+
                                 
 
 

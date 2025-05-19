@@ -1,4 +1,4 @@
-export default function ProjectSetting({ open, onClose, children }) {
+export default function SettingModal({ open, onClose, children }) {
     return (
         <div
             onClick={onClose}

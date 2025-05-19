@@ -7,6 +7,7 @@ use App\Http\Controllers\InboxController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\Space_MembersController;
 use App\Http\Controllers\SpaceController;
+use App\Http\Controllers\TasksController;
 use App\Http\Controllers\Workspace_membersController;
 use App\Models\Space;
 use App\Models\Workspace_members;
@@ -65,6 +66,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/project/{space_id}', [ProjectController::class, 'getProjects'])->name('project.get');
     Route::post('/project/{project}', [ProjectController::class, 'update'])->name('project.update');
     Route::delete('/project/{project}', [ProjectController::class, 'destroy'])->name('project.delete');
+
+    // Task Route
+    Route::post('/task', [TasksController::class, 'store'])->name('task.store');
+    Route::get('/task/{project_id}', [TasksController::class, 'getTasks'])->name('task.get');
+    Route::post('/task/{tasks}', [TasksController::class, 'update'])->name('task.update');
+    Route::delete('/task/{tasks}', [TasksController::class, 'destroy'])->name('task.delete');
     
     // Inbox Route
     Route::get('/inbox', [InboxController::class, 'index'])->name('inbox');

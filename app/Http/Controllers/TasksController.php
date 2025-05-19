@@ -1,0 +1,46 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Requests\TaskRequest;
+use App\Models\tasks;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Redirect;
+
+class TasksController extends Controller
+{
+    public function store(TaskRequest $request)
+    {
+        $data = $request->validated();
+
+        Tasks::create([
+            'project_id' => $data['project_id'],
+            'name' => $data['name'],
+        ]);
+
+        return Redirect::route('dashboard');
+    }
+
+    public function update(TaskRequest $request, tasks $tasks)
+    {
+        $data = $request->validated();
+
+        $tasks->update([
+            'name' => $data['name'],
+        ]);
+
+        return Redirect::route('dashboard');
+    }
+
+    public function destroy(tasks $tasks)
+    {
+        $tasks->delete();
+
+        return Redirect::route('dashboard');
+    }
+
+    public function getTasks($project_id)
+    {
+        return Tasks::where('project_id', $project_id)->get();
+    }
+}
