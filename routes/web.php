@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AssignmentsController;
 use App\Http\Controllers\OauthController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\WorkspaceController;
@@ -75,6 +76,9 @@ Route::middleware('auth')->group(function () {
     
     // Inbox Route
     Route::get('/inbox', [InboxController::class, 'index'])->name('inbox');
+
+    // Assignment Route
+    Route::get('/task/{taskId}', [AssignmentsController::class, 'index'])->name('task.index');
 
 });
 

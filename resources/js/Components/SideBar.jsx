@@ -161,6 +161,7 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
 
         post(route('workspace.store'), {
             onSuccess: () => {
+                data.name = '';
                 setWorkspace(false);
                 setOpenWorkplace(false);
             },
@@ -204,8 +205,8 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
         post(route('space.store'),
         {
             onSuccess: () => {
-                setOpen(false);
                 setData.name = '';
+                setOpen(false);
             },
             onError: () => {
                 data.members = [];
@@ -1196,20 +1197,45 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
                                                                             <ul>
                                                                                 {tasks[project.id] && tasks[project.id].length > 0 ? (
                                                                                     tasks[project.id].map((task) => (
-                                                                                        <li
-                                                                                            className="p-3 ml-3 flex justify-between hover:bg-orange-400 hover:text-white rounded-md transition-colors duration-200 cursor-pointer"
-                                                                                            key={project.id}
-                                                                                        >
-                                                                                            <div className="flex items-center gap-2">
-                                                                                                <FormatListBulletedOutlinedIcon/>
-                                                                                                <p>{task.name}</p>
-                                                                                            </div>
-
-                                                                                            <MoreHorizIcon 
-                                                                                                className="hover:bg-[#19324928] rounded-md cursor-pointer"
-                                                                                                onClick={() => setTaskSetting(task)}
-                                                                                            />
-                                                                                        </li>
+                                                                                        <>
+                                                                                            {route().current('assignment') 
+                                                                                                ? 
+                                                                                                    <li
+                                                                                                        className= "p-3 ml-3 flex justify-between bg-orange-400 text-white rounded-md cursor-pointer"
+                                                                                                        key={task.id}
+                                                                                                    >
+                                                                                                        <div className="flex items-center gap-2">
+                                                                                                            <FormatListBulletedOutlinedIcon/>
+                                                                                                            <p>{task.name}</p>
+                                                                                                        </div>
+                                                                                                    
+                                                                                                        <MoreHorizIcon 
+                                                                                                            className="hover:bg-[#19324928] rounded-md cursor-pointer"
+                                                                                                            onClick={() => setTaskSetting(task)}
+                                                                                                        />
+                                                                                                    </li>
+                                                                                                :
+                                                                                                    <Link
+                                                                                                        href={route('assignment')}
+                                                                                                        className={route().current('assignment')
+                                                                                                            ? "p-3 ml-3 flex justify-between bg-orange-400 text-white rounded-md cursor-pointer"
+                                                                                                            : "p-3 ml-3 flex justify-between hover:bg-orange-400 hover:text-white rounded-md transition-colors duration-200 cursor-pointer"
+                                                                                                        }
+                                                                                                        key={task.id}
+                                                                                                    >
+                                                                                                        <div className="flex items-center gap-2">
+                                                                                                            <FormatListBulletedOutlinedIcon/>
+                                                                                                            <p>{task.name}</p>
+                                                                                                        </div>
+                                                                                                    
+                                                                                                        <MoreHorizIcon 
+                                                                                                            className="hover:bg-[#19324928] rounded-md cursor-pointer"
+                                                                                                            onClick={() => setTaskSetting(task)}
+                                                                                                        />
+                                                                                                    </Link>
+                                                                                            }
+                                                                                        </>
+                                                                                        
                                                                                     ))
                                                                                 ) : 
                                                                                     <li className="text-gray-400 italic p-3 ml-3">Tidak ada task</li>
@@ -1591,13 +1617,6 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
                                         )}
                                     </div>
                                 </ConfirmDeleteModal>
-
-                                
-
-
-                                
-
-
 
                         </ul>
                     </div>

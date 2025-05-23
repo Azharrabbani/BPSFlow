@@ -84,7 +84,6 @@ class WorkspaceController extends Controller
         return Inertia::render('Dashboard', [
             'workspace' => $workspace,
             'members' => $members,
-            'activeMembers' => $activeMembers,
             'activeMembersStatus' => $activeMembersStatus,
             'activeWorkspace' => $activeWorkspace,
             'getSpaces' => $getSpaces,
@@ -254,7 +253,7 @@ class WorkspaceController extends Controller
             ->first();
     }
 
-    private function getInactiveWorkspace($id)
+    public function getInactiveWorkspace($id)
     {
         return Workspace_members::where('user_id', $id)
             ->whereHas('workspace', function ($query) {
