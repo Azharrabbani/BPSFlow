@@ -7,7 +7,7 @@ import { useRef, useState } from 'react';
 export default function Dashboard({ workspace, members, activeWorkspace, activeMembersStatus, getSpaces }) {
     const user = usePage().props.auth.user;
 
-    const {data, setData, post, delete:destory, errors, processing, recentlySuccessful} = useForm({
+    const {data, setData, post, delete:destroy, errors, processing, recentlySuccessful} = useForm({
         name: "",
         user_id: user.id,
     });
@@ -42,7 +42,7 @@ export default function Dashboard({ workspace, members, activeWorkspace, activeM
     const deleteWorkspace = (e, id) => {
         e.preventDefault();
 
-        destory(route('workspace.delete', id));
+        destroy(route('workspace.delete', id));
     };
 
     return (

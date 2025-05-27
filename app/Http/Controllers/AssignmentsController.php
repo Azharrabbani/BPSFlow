@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Enums\WorkspaceStatus;
 use App\Models\assignments;
+use App\Models\Project;
+use App\Models\Space;
+use App\Models\Tasks;
 use App\Models\Workspace_members;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,7 +17,7 @@ class AssignmentsController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Tasks $tasks)
     {
         $user = Auth::user();
 
@@ -71,6 +74,10 @@ class AssignmentsController extends Controller
         $activeMembersStatus = $workspace_members->getMembersStatus($activeMembership->workspace_id);
     
         $workspace = $workspaces->getInactiveWorkspace($user->id);
+
+        $currentProject = Project::where('id', $tasks->project_id)->get();
+
+        $currentSpace = Space::where('id', $currentProject[0]->space_id)->get();
     
         return Inertia::render('Assignment/Index', [
             'workspace' => $workspace,
@@ -79,6 +86,9 @@ class AssignmentsController extends Controller
             'activeMembersStatus' => $activeMembersStatus,
             'activeWorkspace' => $activeWorkspace,
             'getSpaces' => $getSpaces,
+            'task' => $tasks,
+            'currentProject' => $currentProject,
+            'currentSpace' => $currentSpace,
         ]);
     }
 

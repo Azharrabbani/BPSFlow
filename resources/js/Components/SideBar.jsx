@@ -1197,45 +1197,29 @@ export default function Sidebar( { children, workspace, members, activeWorkspace
                                                                             <ul>
                                                                                 {tasks[project.id] && tasks[project.id].length > 0 ? (
                                                                                     tasks[project.id].map((task) => (
-                                                                                        <>
-                                                                                            {route().current('assignment') 
-                                                                                                ? 
-                                                                                                    <li
-                                                                                                        className= "p-3 ml-3 flex justify-between bg-orange-400 text-white rounded-md cursor-pointer"
-                                                                                                        key={task.id}
-                                                                                                    >
-                                                                                                        <div className="flex items-center gap-2">
-                                                                                                            <FormatListBulletedOutlinedIcon/>
-                                                                                                            <p>{task.name}</p>
-                                                                                                        </div>
-                                                                                                    
-                                                                                                        <MoreHorizIcon 
-                                                                                                            className="hover:bg-[#19324928] rounded-md cursor-pointer"
-                                                                                                            onClick={() => setTaskSetting(task)}
-                                                                                                        />
-                                                                                                    </li>
-                                                                                                :
-                                                                                                    <Link
-                                                                                                        href={route('assignment')}
-                                                                                                        className={route().current('assignment')
-                                                                                                            ? "p-3 ml-3 flex justify-between bg-orange-400 text-white rounded-md cursor-pointer"
-                                                                                                            : "p-3 ml-3 flex justify-between hover:bg-orange-400 hover:text-white rounded-md transition-colors duration-200 cursor-pointer"
-                                                                                                        }
-                                                                                                        key={task.id}
-                                                                                                    >
-                                                                                                        <div className="flex items-center gap-2">
-                                                                                                            <FormatListBulletedOutlinedIcon/>
-                                                                                                            <p>{task.name}</p>
-                                                                                                        </div>
-                                                                                                    
-                                                                                                        <MoreHorizIcon 
-                                                                                                            className="hover:bg-[#19324928] rounded-md cursor-pointer"
-                                                                                                            onClick={() => setTaskSetting(task)}
-                                                                                                        />
-                                                                                                    </Link>
+                                                                                       
+                                                                                        <Link
+                                                                                            href={route('task.index', task.id)}
+                                                                                            className={route().current('task.index', task.id)
+                                                                                                ? "p-3 ml-3 flex justify-between bg-orange-400 text-white rounded-md cursor-pointer"
+                                                                                                : "p-3 ml-3 flex justify-between hover:bg-orange-400 hover:text-white rounded-md transition-colors duration-200 cursor-pointer"
                                                                                             }
-                                                                                        </>
+                                                                                            key={task.id}
+                                                                                        >
+                                                                                            <div className="flex items-center gap-2">
+                                                                                                <FormatListBulletedOutlinedIcon/>
+                                                                                                <p>{task.name}</p>
+                                                                                            </div>
                                                                                         
+                                                                                            <MoreHorizIcon 
+                                                                                                className="hover:bg-[#19324928] rounded-md cursor-pointer"
+                                                                                                onClick={(e) => {
+                                                                                                    e.stopPropagation();
+                                                                                                    e.preventDefault();
+                                                                                                    setTaskSetting(task);
+                                                                                                }}
+                                                                                            />
+                                                                                        </Link>
                                                                                     ))
                                                                                 ) : 
                                                                                     <li className="text-gray-400 italic p-3 ml-3">Tidak ada task</li>

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\TaskRequest;
-use App\Models\tasks;
+use App\Models\Tasks;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
 
@@ -21,7 +21,7 @@ class TasksController extends Controller
         return Redirect::route('dashboard');
     }
 
-    public function update(TaskRequest $request, tasks $tasks)
+    public function update(TaskRequest $request, Tasks $tasks)
     {
         $data = $request->validated();
 

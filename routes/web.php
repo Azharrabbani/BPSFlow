@@ -41,9 +41,9 @@ Route::middleware('auth')->group(function () {
     // Workspace route
     Route::post('/workspace', [WorkspaceController::class, 'store'])->name('workspace.store');
     Route::get('/workspace/{workspace}', [WorkspaceController::class, 'edit'])->name('workspace.edit');
-    Route::get('/workspace/{workspace}/deleteWorkspace', [WorkspaceController::class, 'deleteConfirmation'])->name('workspace.deletePage');
-    Route::post('/workspace/{workspace}/switch', [WorkspaceController::class, 'switchWorkspace'])->name('workspace.switch');
     Route::post('/workspace/{workspace}', [WorkspaceController::class, 'update'])->name('workspace.update');
+    Route::post('/workspace/{workspace}/switch', [WorkspaceController::class, 'switchWorkspace'])->name('workspace.switch');
+    Route::get('/workspace/{workspace}/deleteWorkspace', [WorkspaceController::class, 'deleteConfirmation'])->name('workspace.deletePage');
     Route::delete('workspace/{workspace}', [WorkspaceController::class, 'destroy'])->name('workspace.delete');
     
     // Workspace_members route
@@ -70,7 +70,8 @@ Route::middleware('auth')->group(function () {
 
     // Task Route
     Route::post('/task', [TasksController::class, 'store'])->name('task.store');
-    Route::get('/task/{project_id}', [TasksController::class, 'getTasks'])->name('task.get');
+    Route::get('/task/{project_id}/tasks', [TasksController::class, 'getTasks'])->name('task.get');
+    Route::get('/task/{tasks}', [AssignmentsController::class, 'index'])->name('task.index');
     Route::post('/task/{tasks}', [TasksController::class, 'update'])->name('task.update');
     Route::delete('/task/{tasks}', [TasksController::class, 'destroy'])->name('task.delete');
     
@@ -78,7 +79,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/inbox', [InboxController::class, 'index'])->name('inbox');
 
     // Assignment Route
-    Route::get('/task/{taskId}', [AssignmentsController::class, 'index'])->name('task.index');
 
 });
 
