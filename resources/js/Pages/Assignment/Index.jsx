@@ -393,15 +393,6 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
                       <p>Gantt</p>
                   </Link>
               </div>
-              <div>
-                  <input
-                      class="input rounded-full px-8 py-3 border-2 border-transparent focus:outline-none focus:border-blue-500 placeholder-gray-400 transition-all duration-300 shadow-md w-96"
-                      placeholder="Search..."
-                      required=""
-                      type="text"
-                      onChange={(e) => SetSearchAssignment(e.target.value)}
-                  />
-              </div>
           </div>
           
           
