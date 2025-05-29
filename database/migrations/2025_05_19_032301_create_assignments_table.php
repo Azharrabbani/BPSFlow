@@ -14,11 +14,11 @@ return new class extends Migration
         Schema::create('assignments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('task_id')->constrained()->onDelete('cascade');
-            $table->foreignId('space_member_id')->constrained()->onDelete('cascade');
+            $table->foreignId('space_member_id')->nullable()->constrained()->onDelete('cascade');
             $table->string('name');
             $table->string('status');
-            $table->string('priority');
-            $table->date('due_date');
+            $table->string('priority')->nullable();
+            $table->date('due_date')->nullable();
             $table->string('file')->nullable();
             $table->timestamps();
         });

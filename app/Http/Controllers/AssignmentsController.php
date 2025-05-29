@@ -3,13 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Enums\WorkspaceStatus;
-use App\Models\assignments;
+use App\Http\Requests\AsssignmentRequest;
+use App\Models\Assignments;
 use App\Models\Project;
 use App\Models\Space;
 use App\Models\Tasks;
 use App\Models\Workspace_members;
+use Illuminate\Console\View\Components\Task;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 
 class AssignmentsController extends Controller
@@ -26,6 +29,8 @@ class AssignmentsController extends Controller
         $spaces = new SpaceController();
 
         $workspace_members = new Workspace_membersController();
+
+        $assignment = new AssignmentsController();
     
         $activeMembership = $workspaces->getActiveWorkspace($user->id);
 
@@ -59,7 +64,7 @@ class AssignmentsController extends Controller
         }
     
         if (!$activeMembership) {
-            return Inertia::render('Dashboard', [
+            return Inertia::render('Assignment/Index', [
                 'workspace' => [],
                 'activeMembers' => 0,
                 'activeMembersStatus' => [],
@@ -78,6 +83,8 @@ class AssignmentsController extends Controller
         $currentProject = Project::where('id', $tasks->project_id)->get();
 
         $currentSpace = Space::where('id', $currentProject[0]->space_id)->get();
+
+        $assignments = $assignment->getAssignments($tasks->id);
     
         return Inertia::render('Assignment/Index', [
             'workspace' => $workspace,
@@ -89,31 +96,82 @@ class AssignmentsController extends Controller
             'task' => $tasks,
             'currentProject' => $currentProject,
             'currentSpace' => $currentSpace,
+            'assignments' => $assignments
         ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function store(AsssignmentRequest $request)
     {
-        //
+        $data = $request->validated();
+
+        Assignments::create([
+            'name' => $data['name'],
+            'task_id' => $data['task_id'],
+            'space_member_id' => $data['space_member_id'],
+            'status' => $data['status'],
+            'priority' => $data['priority'],
+            'due_date' => $data['due_date']
+        ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function getAssignments($task_id)
     {
-        //
+        return Assignments::where('task_id', $task_id)->get();
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(assignments $assignments)
+     public function renameAssignment(Request $request, Assignments $assignments)
     {
-        //
+        $assignment = $request->validate([
+            'name' => 'required|string'
+        ]);
+        
+        $assignments->update([
+            'name' => $assignment['name']
+        ]);
+    }
+
+    public function updateAssignee(Request $request, Assignments $assignments)
+    {
+        $assignee = $request->validate([
+            'space_member_id' => 'required|integer'
+        ]);
+
+        $assignments->update([
+            'space_member_id' => $assignee['space_member_id']
+        ]);
+    }
+
+    public function updateStatus(Request $request, Assignments $assignments)
+    {
+        $status = $request->validate([
+            'status' => 'required|string'
+        ]);
+        
+        $assignments->update([
+            'status' => $status['status']
+        ]);
+    }
+
+    public function updatePriority(Request $request, Assignments $assignments)
+    {
+        $priority = $request->validate([
+            'priority' => 'nullable|string'
+        ]);
+
+        $assignments->update([
+            'priority' => $priority['priority']
+        ]);
+    }
+
+    public function updateDue(Request $request, Assignments $assignments)
+    {
+        $dueDate = $request->validate([
+            'due_date' => 'nullable|date'
+        ]);
+
+        $assignments->update([
+            'due_date' => $dueDate['due_date']
+        ]);
     }
 
     /**
@@ -132,11 +190,11 @@ class AssignmentsController extends Controller
         //
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+    
     public function destroy(assignments $assignments)
     {
-        //
+        $assignments->delete();
+
+        return Redirect::route('task.index', $assignments->task_id)->with('message', 'Assignment terhapus');
     }
 }

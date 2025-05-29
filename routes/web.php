@@ -10,6 +10,7 @@ use App\Http\Controllers\Space_MembersController;
 use App\Http\Controllers\SpaceController;
 use App\Http\Controllers\TasksController;
 use App\Http\Controllers\Workspace_membersController;
+use App\Models\Assignments;
 use App\Models\Space;
 use App\Models\Workspace_members;
 use Illuminate\Foundation\Application;
@@ -79,7 +80,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/inbox', [InboxController::class, 'index'])->name('inbox');
 
     // Assignment Route
-
+    Route::post('/assignment', [AssignmentsController::class, 'store'])->name('assignment.store');
+    Route::post('/assignment/{assignments}/assignment', [AssignmentsController::class, 'renameAssignment'])->name('assignment.renameAssignment');
+    Route::post('/assignment/{assignments}/assignee', [AssignmentsController::class, 'updateAssignee'])->name('assignment.updateAssignee');
+    Route::post('/assignment/{assignments}/status', [AssignmentsController::class, 'updateStatus'])->name('assignment.updateStatus');
+    Route::post('/assignment/{assignments}/priority', [AssignmentsController::class, 'updatePriority'])->name('assignment.updatePriority');
+    Route::post('/assignment/{assignments}/dueDate', [AssignmentsController::class, 'updateDue'])->name('assignment.updateDue');
+    Route::delete('/assignment/{assignments}', [AssignmentsController::class, 'destroy'])->name('assignment.delete');
 });
 
 require __DIR__.'/auth.php';

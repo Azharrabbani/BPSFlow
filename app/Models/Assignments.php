@@ -16,5 +16,4 @@ class Assignments extends Model
         'priority',
         'due_date',
     ];
-
 }

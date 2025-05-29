@@ -25,7 +25,8 @@ class AsssignmentRequest extends FormRequest
             'task_id' => ['required', 'integer'],
             'space_member_id' => ['nullable', 'integer', 'max: 255'],
             'name' => ['required', 'string'],
-            'priority' => ['required', 'string'],
+            'priority' => ['nullable', 'string'],
+            'status' => ['required', 'string'],
             'due_date' => ['nullable', 'date']
         ];
     }

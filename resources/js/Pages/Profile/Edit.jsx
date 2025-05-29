@@ -28,7 +28,7 @@ export default function Edit({ mustVerifyEmail, status, workspace, activeMembers
           activeMembersStatus={activeMembersStatus}  
         >
             
-            <div className="absolute top-40 right-4 md:right-8 lg:right-1 card-animation">
+            <div className="absolute top-40 right-4 md:right-8 lg:right-1">
                 {flashMsg && (
 
                 <div class="card">
