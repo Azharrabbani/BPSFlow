@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AssignmentsController;
+use App\Http\Controllers\FilesController;
 use App\Http\Controllers\OauthController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\WorkspaceController;
@@ -87,6 +88,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/assignment/{assignments}/priority', [AssignmentsController::class, 'updatePriority'])->name('assignment.updatePriority');
     Route::post('/assignment/{assignments}/dueDate', [AssignmentsController::class, 'updateDue'])->name('assignment.updateDue');
     Route::delete('/assignment/{assignments}', [AssignmentsController::class, 'destroy'])->name('assignment.delete');
+
+    // Files Route
+    Route::post('/assignment/{assignment}/file', [FilesController::class, 'store'])->name('assignment.file');
+    Route::get('/assignment/{assignment}/files', [FilesController::class, 'getFiles'])->name('assignment.getFiles');
+    Route::get('/files/{files}', [FilesController::class, 'download'])->name('files.download');
+    Route::delete('/files/{files}', [FilesController::class, 'destroy'])->name('files.destroy');
 });
 
 require __DIR__.'/auth.php';

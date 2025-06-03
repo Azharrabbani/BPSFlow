@@ -6,6 +6,9 @@ import AssignModal from "@/Components/assignment/AssignModal";
 import PriorityModal from "@/Components/assignment/PriorityModal";
 import AssignModal2 from "@/Components/assignment/AssignModal2";
 import PriorityModal2 from "@/Components/assignment/PriorityModal2";
+import StatusModal from "@/Components/assignment/StatusModal";
+import DetailModal from "@/Components/assignment/detailModal";
+import axios from "axios";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useEffect, useRef, useState } from "react";
@@ -27,21 +30,27 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import NotInterestedIcon from '@mui/icons-material/NotInterested';
 import EditIcon from '@mui/icons-material/Edit';
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
-import StatusModal from "@/Components/assignment/StatusModal";
+import ArticleIcon from '@mui/icons-material/Article';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import HighlightOffIcon from '@mui/icons-material/HighlightOff';
+import BackupTableIcon from '@mui/icons-material/BackupTable';
 
 
 
 export default function Index({ workspace, activeWorkspace, activeMembersStatus, members, getSpaces, task, currentProject, currentSpace, assignments}){
   const user = usePage().props.auth.user;
-  
 
-  const {data, setData, post, delete:destroy, errors, processing, recentlySuccessful} = useForm({
+  const {data, setData, post, get, delete:destroy, errors, processing, recentlySuccessful} = useForm({
     'name': '',
     'task_id' : task.id,
+    'workspace': activeWorkspace.name,
+    'members': members,
     'space_member_id': '',
     'status': 'To Do',
     'priority': '',
     'due_date': '',
+    'assignment_id': '',
+    'file': '',
   });
 
   const {flash} = usePage().props;
@@ -53,6 +62,10 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
   const [searchAssignment, SetSearchAssignment] = useState('');
 
   const [showAssignment, setShowAssignment] = useState(null);
+
+  const [detailToggle, setDetailToggle] = useState(false);
+
+  const [assignmentData, setAssignmentData] = useState(null);
 
   useEffect(() => {
     if (flash?.message) {
@@ -109,6 +122,10 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
 
   const [togglePriority2, setTogglePriority2] = useState(null);
 
+  // Files State
+  const [files, setFiles] = useState([]);
+  const [hoverFiles, setHoverFiles] = useState(null);
+
 
   function clear() {
     setAddAssignment(false);
@@ -142,21 +159,21 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
   function checkStatus(status) {
     if (status === 'To Do') {
       return (
-        <div className="flex gap-2 items-center">
+        <div className="flex gap-2 items-center cursor-default">
           <RadioButtonCheckedOutlinedIcon />
           {status}
         </div>
       )
     } else if (status === 'In Progress') {
       return (
-        <div className="text-blue-500 flex gap-2 items-center">
+        <div className="text-blue-500 flex gap-2 items-center cursor-default">
           <RadioButtonCheckedOutlinedIcon />
           {status}
         </div>
       )
     } else if (status === 'Completed') {
       return (
-        <div className="text-green-600 flex gap-2 items-center">
+        <div className="text-green-600 flex gap-2 items-center cursor-default">
           <RadioButtonCheckedOutlinedIcon />
           {status}
         </div>
@@ -204,6 +221,91 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
     }
   }
 
+  function checkFiles(file, index) {
+    const extension = file.generatedName.slice(file.generatedName.lastIndexOf('.') + 1).toLowerCase();
+    const isImage = ['jpg', 'jpeg', 'png', 'gif'].includes(extension);
+    const imageSrc =
+      file instanceof File
+        ? URL.createObjectURL(file.generatedName)
+        : file.generatedName
+          ? `/storage/files/${file.generatedName}`
+          : 'https://www.freeiconspng.com/uploads/photo-album-icon-png-14.png';
+
+    const baseStyle = "relative w-32 h-32 border-2 flex flex-col items-center justify-center text-center rounded-xl shadow cursor-pointer hover:opacity-70";
+
+    const iconWrapper = (children, color) => (
+      <a 
+        key={index} 
+        className={`${baseStyle} border-2 ${color}`}
+        onMouseEnter={() => setHoverFiles(index)}
+        onMouseLeave={() => setHoverFiles(null)}
+        href={route('files.download', file)}
+      >
+        {children}
+        {hoverFiles === index && (
+          <HighlightOffIcon 
+            className="absolute top-1 right-1 hover:text-red-500"
+            onClick={(e) => deleteFiles(e, file.id)}
+          />
+        )}
+        <figcaption className="text-xs mt-2 break-all px-1">{file.originalName.length > 10 && (
+            file.originalName.slice(0, 15 - 3) + '...'
+          )}
+        </figcaption>
+      </a>
+    );
+
+    console.log(index)
+
+    if (isImage) {
+      return (
+        <a 
+          key={index} 
+          className={baseStyle}
+          onMouseEnter={() => setHoverFiles(index)}
+          onMouseLeave={() => setHoverFiles(null)}
+          href={route('files.download', file)}
+        >
+          {hoverFiles === index && (
+            <HighlightOffIcon 
+              className="absolute top-1 right-1 hover:text-red-500"
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                deleteFiles(e, file.id);
+              }}
+            />
+          )}
+          <img
+            src={imageSrc}
+            alt="Uploaded file"
+            className="w-16 mt-4 h-20 object-cover rounded-xl"
+          />
+          <figcaption className="text-xs mt-4  break-all px-1">{file.originalName.length < 10 ? (
+            file.originalName
+          ) : 
+            file.originalName.slice(0, 10 - 3) + '...'
+          }</figcaption>
+        </a>
+      );
+    }
+
+    if (extension === 'pdf') {
+      return iconWrapper(<PictureAsPdfIcon className="text-red-600 text-6xl" />, "border-red-600");
+    }
+
+    if (extension === 'docx') {
+      return iconWrapper(<ArticleIcon className="text-blue-500 text-6xl" />, "border-blue-500");
+    }
+
+    if (extension === 'xlsx') {
+      return iconWrapper(<BackupTableIcon className="text-green-700 font-semibold text-sm"/>, "border-green-500");
+    }
+
+    // Default fallback
+    return iconWrapper(<span className="text-gray-500 text-sm">FILE</span>, "border-gray-400");
+  }
+
   // Assignment Method
 
   // Create Assignment
@@ -212,7 +314,10 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
 
     post(route('assignment.store'), {
       onSuccess: () => {
-        clear()
+        data.status = 'To Do';
+        data.name = '';
+        data.priority = '';
+        clear();
       },
       onError: () => [
         console.log("Galal membuat assignment")
@@ -222,6 +327,45 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
       }
     })
   }
+
+  // Upload File
+  const uploadFiles = (e, assignmentId) => {
+    e.preventDefault();
+
+    post(route('assignment.file', assignmentId), {
+      forceFormData: true,
+    })
+  }
+
+  // Get Files
+  const getFiles = async (e, assignmentId) => {
+    e.preventDefault();
+
+    if(assignmentData === assignmentId.id) {
+      setAssignmentData(null);
+      setDetailToggle(false);
+      setFiles([]);
+      return;
+    }
+
+    try{
+      const response = await axios.get(route('assignment.getFiles', assignmentId.id));
+      setFiles((prev) => ({...prev, [assignmentId.id]: response.data}));
+      console.log(files);
+      setAssignmentData(assignmentId)
+      setDetailToggle(true);
+    }catch(error) {
+      console.error("Gagal fetch files", error);
+    }
+  }
+
+  // Delete Files
+  const deleteFiles = (e, fileId) => {
+    e.preventDefault();
+
+    destroy(route('files.destroy', fileId));
+  }
+  
 
   // Rename Assignment
   const renameAssignment = (e, assignmentId) => {
@@ -315,6 +459,8 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
     });
   }
 
+  
+
 
   return (
       <AuthenticatedLayout 
@@ -396,7 +542,7 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
           </div>
           
           
-          {assignments && assignments.length > 0 && (
+          {assignments && assignments.length > 0 ? (
             Object.entries(groupAssignments).map(([status, tasks]) => (
               <div key={status} className="mt-[50px]">
                 <div className="flex flex-row items-center justify-between space-x-7 m-2 mt-5 ">
@@ -456,6 +602,9 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
                                 data-label="Name"
                                 onMouseOver={() => setHoverAssignment(assignment)}
                                 onMouseLeave={() => setHoverAssignment(null)}
+                                onClick={(e) => {
+                                  getFiles(e, assignment);
+                                }}
                               >
                                 {editingAssignment === assignment.id ? (
                                   <input
@@ -476,6 +625,7 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
                                       <DriveFileRenameOutlineIcon
                                         className="hover:bg-slate-300 rounded-full"
                                         onClick={(e) => {
+                                          e.preventDefault();
                                           e.stopPropagation();
                                           setEditingAssignment(assignment.id);
                                           setEditedName(assignment.name);
@@ -738,11 +888,18 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
               </div>
             ))
             
-          )}
+          ) :
+            <div className="flex justify-end">
+              <PrimaryButton onClick={() => setAddAssignment(true)}>
+                <AddOutlinedIcon />
+                Add Task
+              </PrimaryButton>
+            </div>
+          }
 
          
 
-            <AssignmentModal 
+          <AssignmentModal 
               open={addAssignment} 
               onClose={() => {
                 clear()
@@ -1011,7 +1168,77 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
 
                
               </form>
-            </AssignmentModal>
+          </AssignmentModal>
+
+        <DetailModal open={detailToggle} onClose={() => setDetailToggle(false)}>
+          {assignmentData && (
+            <>
+              <h1 className="text-2xl font-bold mb-4">{assignmentData.name}</h1>
+              <div className="flex gap-4">
+                {/* LEft Side */}
+                <div className="p-6 space-y-6 basis-2/3 bg-white border rounded shadow">
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <p className="font-semibold">Status</p>
+                      <p>{checkStatus(assignmentData.status) || '-'}</p>
+                      <p className="font-semibold mt-4">Due Date</p>
+                      <p>{assignmentData.due_date || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold">Assignee</p>
+                      <p>{checkUser(assignmentData.space_member_id) || '-'}</p>
+                      <p className="font-semibold mt-4">Priority</p>
+                      <p>{checkPriority(assignmentData.priority) || '-'}</p>
+                      
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Side */}
+                <form 
+                  className="p-6 basis-2/3 bg-white border rounded shadow space-y-4" 
+                  encType="multipart/form-data"
+                >
+                  <div>
+                    <p className="font-semibold text-lg">Upload File</p>
+                    <label
+                      htmlFor="fileUpload"
+                      className="cursor-pointer inline-block px-4 py-1 bg-blue-50 text-blue-500 font-semibold rounded-full hover:bg-blue-100"
+                    >
+                      Upload File
+                    </label>
+                    <input
+                      id="fileUpload"
+                      type="file"
+                      multiple
+                      className="hidden"
+                      onChange={(e) => {
+                        data.file = e.target.files;
+                        data.assignment_id = assignmentData.id;
+                        uploadFiles(e, assignmentData);
+                      }}
+                    />
+                    <div className="space-y-3 mt-3">
+                      <p className="font-semibold">Uploaded Files:</p>
+                      <ul className="flex flex-wrap gap-3 text-sm max-h-[200px] overflow-y-auto">
+                        {files[assignmentData.id] && files[assignmentData.id].length > 0 ? (
+                          files[assignmentData.id].map((file, index) => (
+                            <div className="flex mt-3">
+                              {checkFiles(file, index)}
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-gray-400 italic">Belum ada file yang diunggah.</p>
+                        )}
+                          
+                      </ul>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </>
+          )}
+        </DetailModal>
       </AuthenticatedLayout>
   )
 }

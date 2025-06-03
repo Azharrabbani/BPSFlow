@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Space_members extends Model
 {
@@ -23,8 +24,8 @@ class Space_members extends Model
         return $this->belongsTo(Space::class);
     }
 
-    public function assignments(): BelongsToMany
+    public function assignments(): HasMany
     {
-        return $this->belongsToMany(Assignments::class);
+        return $this->hasMany(Assignments::class);
     }
 }

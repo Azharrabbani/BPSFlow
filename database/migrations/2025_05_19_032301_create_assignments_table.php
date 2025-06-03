@@ -19,7 +19,6 @@ return new class extends Migration
             $table->string('status');
             $table->string('priority')->nullable();
             $table->date('due_date')->nullable();
-            $table->string('file')->nullable();
             $table->timestamps();
         });
     }
