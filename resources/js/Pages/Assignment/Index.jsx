@@ -34,7 +34,8 @@ import ArticleIcon from '@mui/icons-material/Article';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import BackupTableIcon from '@mui/icons-material/BackupTable';
-
+import CodeIcon from '@mui/icons-material/Code';
+import FolderZipIcon from '@mui/icons-material/FolderZip';
 
 
 export default function Index({ workspace, activeWorkspace, activeMembersStatus, members, getSpaces, task, currentProject, currentSpace, assignments}){
@@ -73,7 +74,6 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
       setTimeout(() => setFlashMsg(null), 3000);
     }
   }, [flash]);
-
 
   const groupAssignments = assignments.reduce((groups, task) => {
     const status = task.status;
@@ -124,7 +124,17 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
 
   // Files State
   const [files, setFiles] = useState([]);
+
   const [hoverFiles, setHoverFiles] = useState(null);
+
+  const [uploadTrigger, setUploadTrigger] = useState(false);
+
+  // renderFiles
+  useEffect(() => {
+    if (assignmentData) {
+      getFiles({ preventDefault: () => {} }, assignmentData);
+    }
+  }, [uploadTrigger]);
 
 
   function clear() {
@@ -224,6 +234,7 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
   function checkFiles(file, index) {
     const extension = file.generatedName.slice(file.generatedName.lastIndexOf('.') + 1).toLowerCase();
     const isImage = ['jpg', 'jpeg', 'png', 'gif'].includes(extension);
+    const isCodeFile = ['cpp', 'py', 'java', 'html', 'css', 'js', 'php', 'dart', 'c', 'swift', 'vb', 'xml', 'json', 'sh', 'bat', 'dll', 'apk'].includes(extension);
     const imageSrc =
       file instanceof File
         ? URL.createObjectURL(file.generatedName)
@@ -255,7 +266,6 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
       </a>
     );
 
-    console.log(index)
 
     if (isImage) {
       return (
@@ -281,29 +291,51 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
             alt="Uploaded file"
             className="w-16 mt-4 h-20 object-cover rounded-xl"
           />
-          <figcaption className="text-xs mt-4  break-all px-1">{file.originalName.length < 10 ? (
-            file.originalName
-          ) : 
-            file.originalName.slice(0, 10 - 3) + '...'
-          }</figcaption>
+          <figcaption className="text-xs mt-4 break-all px-1">
+            {file.originalName.length < 10
+              ? file.originalName
+              : file.originalName.slice(0, 10 - 3) + '...'}
+          </figcaption>
         </a>
       );
-    }
-
-    if (extension === 'pdf') {
+    } else if (isCodeFile) {
+      return iconWrapper(<CodeIcon className="text-orange-500 text-6xl" />, "border-orange-500");
+    } else if (extension === 'pdf') {
       return iconWrapper(<PictureAsPdfIcon className="text-red-600 text-6xl" />, "border-red-600");
-    }
-
-    if (extension === 'docx') {
+    } else if (extension === 'docx') {
       return iconWrapper(<ArticleIcon className="text-blue-500 text-6xl" />, "border-blue-500");
-    }
-
-    if (extension === 'xlsx') {
+    } else if (extension === 'xlsx') {
       return iconWrapper(<BackupTableIcon className="text-green-700 font-semibold text-sm"/>, "border-green-500");
+    } else if (extension === 'zip') {
+      return iconWrapper(<FolderZipIcon className="text-black font-semibold text-sm"/>, "border-black");
+    } else {
+      return iconWrapper(<span className="text-gray-500 text-sm">FILE</span>, "border-gray-400");
     }
+  }
 
-    // Default fallback
-    return iconWrapper(<span className="text-gray-500 text-sm">FILE</span>, "border-gray-400");
+  function checkDue(dueDate) {
+    const today = new Date().toISOString().slice(0, 10);
+    const setTomorrow = new Date(today);
+    setTomorrow.setDate(setTomorrow.getDate() + 1);
+    const tomorrow = new Date(setTomorrow).toISOString().slice(0, 10);
+
+    if (dueDate === today) {
+      return (
+        <p className="text-blue-500">Today</p>
+      )
+    } else if (dueDate === tomorrow) {
+      return (
+        <p className="text-orange-500">Tomorrow</p>
+      )
+    } else if (dueDate < today) {
+      return (
+        <p className="text-red-500">Late</p>
+      )
+    } else {
+      return (
+        <p>{dueDate}</p>
+      )
+    }
   }
 
   // Assignment Method
@@ -317,6 +349,7 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
         data.status = 'To Do';
         data.name = '';
         data.priority = '';
+        data.due_date = '';
         clear();
       },
       onError: () => [
@@ -330,12 +363,18 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
 
   // Upload File
   const uploadFiles = (e, assignmentId) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    post(route('assignment.file', assignmentId), {
-      forceFormData: true,
-    })
-  }
+  post(route('assignment.file', assignmentId), {
+    forceFormData: true,
+    onSuccess: () => {
+      setUploadTrigger(prev => !prev); 
+    },
+    onError: (err) => {
+      console.error('Gagal upload file:', err);
+    }
+  });
+};
 
   // Get Files
   const getFiles = async (e, assignmentId) => {
@@ -351,7 +390,6 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
     try{
       const response = await axios.get(route('assignment.getFiles', assignmentId.id));
       setFiles((prev) => ({...prev, [assignmentId.id]: response.data}));
-      console.log(files);
       setAssignmentData(assignmentId)
       setDetailToggle(true);
     }catch(error) {
@@ -363,10 +401,13 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
   const deleteFiles = (e, fileId) => {
     e.preventDefault();
 
-    destroy(route('files.destroy', fileId));
+    destroy(route('files.destroy', fileId), {
+      onSuccess: () => {
+      setUploadTrigger(prev => !prev); 
+    },
+    });
   }
   
-
   // Rename Assignment
   const renameAssignment = (e, assignmentId) => {
     e.preventDefault();
@@ -432,6 +473,7 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
     post(route('assignment.updatePriority', assignmentId), {
       onSuccess: () => {
         setTogglePriority2(null);
+        data.priority = '';
       },
       onError: () => {
         console.log('Gagal Update Priority')
@@ -449,6 +491,7 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
     post(route('assignment.updateDue', assignmentId), {
       onSuccess: () => {
         setToggleDue2(null);
+        data.due_date = '';
       },
       onError: () => {
         console.log('Gagal Update Due Date')
@@ -458,9 +501,6 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
       }
     });
   }
-
-  
-
 
   return (
       <AuthenticatedLayout 
@@ -556,7 +596,7 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
                     
                     <PrimaryButton onClick={() => setAddAssignment(true)}>
                       <AddOutlinedIcon />
-                      Add Task
+                      Assignment
                     </PrimaryButton>
                   </div>
 
@@ -662,7 +702,7 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
                                   onMouseOver={() => setHoverDueDate(assignment)}
                                   onMouseLeave={() => setHoverDueDate(null)}
                                 >
-                                  {assignment.due_date}
+                                  {checkDue(assignment.due_date)}
                                   {hoverDueDate === assignment && (
                                     <CloseIcon 
                                       className="hover:bg-slate-300 rounded-full"
@@ -892,7 +932,7 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
             <div className="flex justify-end">
               <PrimaryButton onClick={() => setAddAssignment(true)}>
                 <AddOutlinedIcon />
-                Add Task
+                Assignment
               </PrimaryButton>
             </div>
           }

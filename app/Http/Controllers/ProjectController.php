@@ -19,8 +19,6 @@ class ProjectController extends Controller
             'space_id' => $project['space_id'],
             'name' => $project['name'],
         ]);
-
-        return Redirect::route('dashboard');
     }
 
     public function update(ProjectRequest $request, Project $project)
@@ -37,8 +35,6 @@ class ProjectController extends Controller
     public function destroy(Project $project)
     {
         $project->delete();
-
-        return Redirect::route('dashboard');
     }
 
     public function getProjects($space_id)

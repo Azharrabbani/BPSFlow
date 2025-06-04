@@ -13,8 +13,8 @@ import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 export default function EditWorkspace({ workspace, children, activeMembersStatus }) {
     const user = usePage().props.auth.user;
 
-     
-
+    const currentUserStatus = activeMembersStatus.find(m => m.user_id === user.id).status;
+    
     return (
         <div className="h-screen flex bg-blue-100">
             <Head title="Settings"/>
@@ -42,17 +42,19 @@ export default function EditWorkspace({ workspace, children, activeMembersStatus
                 <div className="flex h-full bg-gray-100 flex-col">
                     <div className="border-b-2 border-gray-300">
                         <ul className="w-full justify-center">
-                            <Link 
-                                href={route('workspace.edit', workspace)}
-                                className={route().current('workspace.edit', workspace) 
-                                    ? "py-3 flex bg-sky-400 text-white rounded-sm cursor-pointer" 
-                                    : "py-3 flex hover:bg-sky-400 hover:text-white hover:rounded-sm transition-colors duration-200 cursor-pointer"
-                                }>
-                                <div className="flex px-4 gap-2">
-                                    <SettingsIcon/>
-                                    <p>Settings</p>
-                                </div>
-                            </Link>
+                            {currentUserStatus === 'admin' || currentUserStatus === 'owner' && (
+                                <Link 
+                                    href={route('workspace.edit', workspace)}
+                                    className={route().current('workspace.edit', workspace) 
+                                        ? "py-3 flex bg-sky-400 text-white rounded-sm cursor-pointer" 
+                                        : "py-3 flex hover:bg-sky-400 hover:text-white hover:rounded-sm transition-colors duration-200 cursor-pointer"
+                                    }>
+                                    <div className="flex px-4 gap-2">
+                                        <SettingsIcon/>
+                                        <p>Settings</p>
+                                    </div>
+                                </Link>
+                            )}
                                 
 
                             <Link 

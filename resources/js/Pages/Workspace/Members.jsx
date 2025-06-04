@@ -53,8 +53,10 @@ const customLayout = {
     }),
 };
 
-export default function Members( { workspace, members, activeMembersStatus } ) {
+export default function Members( { workspace, members} ) {
     const user = usePage().props.auth.user;
+
+    console.log(members);
 
     const currentUserStatus = members.find(m => m.user_id === user.id).status;
 
@@ -135,7 +137,7 @@ export default function Members( { workspace, members, activeMembersStatus } ) {
     return(
         <EditWorkspace 
             workspace={workspace}
-            activeMembersStatus={activeMembersStatus}
+            activeMembersStatus={members}
         >
             <div className="p-6">
                 <h1 className="text-3xl"><span className="text-blue-500">{workspace.name}'s</span> Members</h1>
