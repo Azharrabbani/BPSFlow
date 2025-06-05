@@ -54,113 +54,54 @@ export default function Dashboard({ workspace, members, activeWorkspace, activeM
             getSpaces={getSpaces}
         >
             <Head title="Dashboard" />
+            <div className="space-y-5">
+                <div className="text-center text-[30px] bg-white w-full p-4">
+                    <h1>Workspace <span className="font-bold text-blue-500">{activeWorkspace.name}</span></h1>
+                </div>
 
-            <div className="py-12">
-                <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
-                    <div className="overflow-hidden bg-white shadow-sm sm:rounded-lg">
-                        <div className="p-6 text-gray-900">
-                            You're logged in!
+                <div className="bg-white rounded-md shadow w-full">
+                    <div>
+                        {/* Data Container */}
+                        <div className="p-8 bg-white border border-bottom-black">
+                            <h2 className="opacity-50">Space / Project / Task</h2>
+                            <div className="flex justify-between">
+                                <p>Assigment Name</p>
+                                <p>Progress Bar</p>
+                            </div>
+                        </div>
+                        <div className="p-8 bg-white border border-bottom-black">
+                            <h2 className="opacity-50">Space / Project / Task</h2>
+                            <div className="flex justify-between">
+                                <p>Assigment Name</p>
+                                <p>Progress Bar</p>
+                            </div>
+                        </div>
+                        <div className="p-8 bg-white border border-bottom-black">
+                            <h2 className="opacity-50">Space / Project / Task</h2>
+                            <div className="flex justify-between">
+                                <p>Assigment Name</p>
+                                <p>Progress Bar</p>
+                            </div>
+                        </div>
+                        <div className="p-8 bg-white border border-bottom-black">
+                            <h2 className="opacity-50">Space / Project / Task</h2>
+                            <div className="flex justify-between">
+                                <p>Assigment Name</p>
+                                <p>Progress Bar</p>
+                            </div>
+                        </div>
+                        <div className="p-8 bg-white border border-bottom-black">
+                            <h2 className="opacity-50">Space / Project / Task</h2>
+                            <div className="flex justify-between">
+                                <p>Assigment Name</p>
+                                <p>Progress Bar</p>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div className='py-12'>
-                <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
-                    <div className="overflow-hidden bg-white shadow-sm sm:rounded-lg">
-                        <div className="p-6 text-gray-900">
-                            
-                            <form onSubmit={createWorkspace}>
-                                
-                                <label htmlFor="title-workspace">Title</label>
-                                <input type="text" name='name' onChange={(e) => setData('name', e.target.value)} />
-                                {errors.name && <p className="error">{errors.name}</p>}
-                                <PrimaryButton>Create</PrimaryButton>
-                            </form>
-                        </div>   
-                    </div>
-                </div>
-                
-
-            </div>
-
-            <div className="py-12">
-                <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
-                    <div className="overflow-hidden bg-white shadow-sm sm:rounded-lg">
-                        <div className="p-6 text-gray-900">
-                            Inbox
-
-                            {workspace && workspace.length > 0 ? (
-                                workspace.map((workspaceData) => (
-                                    <div key={data.id} className="flex items-center justify-between border-b py-2">
-                                        {dataId === workspaceData.id ? (
-                                            <input 
-                                                type="text" 
-                                                defaultValue={workspaceData.name} 
-                                                onChange={(e) => setData('name', e.target.value)}
-                                                ref={inputWorkspace} 
-                                                className="border px-2 py-1 rounded"
-                                            />
-                                        ) : (
-                                            <p className="text-lg" ref={inputWorkspace}>{workspaceData.name}</p>
-                                        )}
-    
-                                        <div className="flex gap-5">
-                                            {dataId === workspaceData.id ? (
-                                                <div className='flex gap-2'>
-                                                <form onSubmit={(e) => updateWorkspace(e, workspaceData.id)}>
-                                                    <button 
-                                                        type="submit"
-                                                        className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
-                                                    >
-                                                        Save
-                                                    </button>
-                                                </form>
-                                            
-                                                <button 
-                                                    onClick={() => handleCancel(workspaceData.id)}
-                                                    className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-                                                >
-                                                    cancel
-                                                </button>
-                                            
-                                                
-                                            
-                                                </div>
-                                                
-                                            ) : (
-                                                <div className="flex gap-3">
-                                                    <button 
-                                                        onClick={() => handleInputClick(workspaceData.id)}
-                                                        className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
-                                                    >
-                                                        Edit
-                                                    </button>
-                                            
-                                                    <form onSubmit={(e) => deleteWorkspace(e, workspaceData.id)}>
-                                                        <button 
-                                                            type="submit"
-                                                            className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-                                                        >
-                                                            Delete                                     
-                                                        </button>
-                                                    </form>
-                                            
-                                                </div>
-                                                
-                                            )}
-                                        </div>
-                                    </div>
-                                ))
-                            ) : (
-                                <p>No workspaces found</p>
-                            )}
-                            
-                        </div>   
-                    </div>
-                </div>
-            </div>
-
+            
         </AuthenticatedLayout>
     );
 }

@@ -1215,7 +1215,7 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
             <>
               <h1 className="text-2xl font-bold mb-4">{assignmentData.name}</h1>
               <div className="flex gap-4">
-                {/* LEft Side */}
+                {/* Left Side */}
                 <div className="p-6 space-y-6 basis-2/3 bg-white border rounded shadow">
                   <div className="grid grid-cols-2 gap-6">
                     <div>
