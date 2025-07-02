@@ -13,7 +13,7 @@ class Tasks extends Model
         'name',
     ];
 
-    public function projects(): BelongsTo
+    public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);
     }

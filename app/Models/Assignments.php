@@ -11,7 +11,7 @@ class Assignments extends Model
 {
     protected $fillable = [
         'space_member_id',
-        'task_id',
+        'tasks_id',
         'name',
         'status',
         'priority',

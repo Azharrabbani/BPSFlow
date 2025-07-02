@@ -10,6 +10,9 @@ import StatusModal from "@/Components/assignment/StatusModal";
 import DetailModal from "@/Components/assignment/detailModal";
 import axios from "axios";
 import DatePicker from "react-datepicker";
+import { Gantt } from "wx-react-gantt";
+import "wx-react-gantt/dist/gantt.css";
+import { Willow } from "wx-react-gantt";
 import "react-datepicker/dist/react-datepicker.css";
 import { useEffect, useRef, useState } from "react";
 
@@ -38,13 +41,15 @@ import CodeIcon from '@mui/icons-material/Code';
 import FolderZipIcon from '@mui/icons-material/FolderZip';
 
 
-export default function Index({ workspace, activeWorkspace, activeMembersStatus, members, getSpaces, task, currentProject, currentSpace, assignments}){
+export default function Index({ workspace, activeWorkspace, activeMembersStatus, members, getWorkspaceSpaces, tasks, currentProject, currentSpace, assignments}){
   const user = usePage().props.auth.user;
 
+  const currentUserStatus = activeMembersStatus.find(m=> m.user_id === user.id).status;
+  
   const {data, setData, post, get, delete:destroy, errors, processing, recentlySuccessful} = useForm({
     'name': '',
-    'task_id' : task.id,
-    'workspace': activeWorkspace.name,
+    'tasks_id' : tasks.id,
+    'workspace': activeWorkspace,
     'members': members,
     'space_member_id': '',
     'status': 'To Do',
@@ -53,6 +58,24 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
     'assignment_id': '',
     'file': '',
   });
+
+  const mappedAssignments = assignments.map(item => ({
+    id: item.id,
+    text: item.name,
+    start: item.created_at,
+    end: item.due_date,
+    lazy: false,
+  }));
+
+  const links = [{ id: 1, source: 20, target: 21, type: "e2e" }];
+
+  const scales = [
+    { unit: "month", step: 1, format: "MMMM yyy" },
+    { unit: "day", step: 1, format: "d" },
+  ];
+
+  const readonly = true;
+
 
   const {flash} = usePage().props;
 
@@ -68,6 +91,10 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
 
   const [assignmentData, setAssignmentData] = useState(null);
 
+  const [listView, setListView] = useState(true);
+
+  const [gantView, setGantView] = useState(false);
+
   useEffect(() => {
     if (flash?.message) {
       setFlashMsg(flash.message);
@@ -75,10 +102,10 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
     }
   }, [flash]);
 
-  const groupAssignments = assignments.reduce((groups, task) => {
-    const status = task.status;
+  const groupAssignments = assignments.reduce((groups, tasks) => {
+    const status = tasks.status;
     if (!groups[status]) groups[status] = [];
-    groups[status].push(task);
+    groups[status].push(tasks);
     return groups;
   }, {});
 
@@ -125,7 +152,6 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
   // Files State
   const [files, setFiles] = useState([]);
 
-  const [hoverFiles, setHoverFiles] = useState(null);
 
   const [uploadTrigger, setUploadTrigger] = useState(false);
 
@@ -169,21 +195,21 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
   function checkStatus(status) {
     if (status === 'To Do') {
       return (
-        <div className="flex gap-2 items-center cursor-default">
+        <div className="flex gap-2 items-center">
           <RadioButtonCheckedOutlinedIcon />
           {status}
         </div>
       )
     } else if (status === 'In Progress') {
       return (
-        <div className="text-blue-500 flex gap-2 items-center cursor-default">
+        <div className="text-blue-500 flex gap-2 items-center">
           <RadioButtonCheckedOutlinedIcon />
           {status}
         </div>
       )
     } else if (status === 'Completed') {
       return (
-        <div className="text-green-600 flex gap-2 items-center cursor-default">
+        <div className="text-green-600 flex gap-2 items-center">
           <RadioButtonCheckedOutlinedIcon />
           {status}
         </div>
@@ -226,7 +252,7 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
       )
     } else {
       return (
-        null
+        <p className="opacity-50 italic">Select status</p>
       )
     }
   }
@@ -248,17 +274,16 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
       <a 
         key={index} 
         className={`${baseStyle} border-2 ${color}`}
-        onMouseEnter={() => setHoverFiles(index)}
-        onMouseLeave={() => setHoverFiles(null)}
+        
         href={route('files.download', file)}
       >
         {children}
-        {hoverFiles === index && (
+        
           <HighlightOffIcon 
             className="absolute top-1 right-1 hover:text-red-500"
             onClick={(e) => deleteFiles(e, file.id)}
           />
-        )}
+   
         <figcaption className="text-xs mt-2 break-all px-1">{file.originalName.length > 10 && (
             file.originalName.slice(0, 15 - 3) + '...'
           )}
@@ -272,11 +297,10 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
         <a 
           key={index} 
           className={baseStyle}
-          onMouseEnter={() => setHoverFiles(index)}
-          onMouseLeave={() => setHoverFiles(null)}
+          
           href={route('files.download', file)}
         >
-          {hoverFiles === index && (
+          
             <HighlightOffIcon 
               className="absolute top-1 right-1 hover:text-red-500"
               onClick={(e) => {
@@ -285,7 +309,7 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
                 deleteFiles(e, file.id);
               }}
             />
-          )}
+          
           <img
             src={imageSrc}
             alt="Uploaded file"
@@ -313,27 +337,33 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
     }
   }
 
-  function checkDue(dueDate) {
+  function checkDue(assignment) {
     const today = new Date().toISOString().slice(0, 10);
     const setTomorrow = new Date(today);
     setTomorrow.setDate(setTomorrow.getDate() + 1);
     const tomorrow = new Date(setTomorrow).toISOString().slice(0, 10);
 
-    if (dueDate === today) {
+    if (assignment.status === 'Completed') {
+      return (
+        <p>{assignment.due_date}</p>
+      )
+    }
+
+    if (assignment.due_date === today) {
       return (
         <p className="text-blue-500">Today</p>
       )
-    } else if (dueDate === tomorrow) {
+    } else if (assignment.due_date === tomorrow) {
       return (
         <p className="text-orange-500">Tomorrow</p>
       )
-    } else if (dueDate < today) {
+    } else if (assignment.due_date < today) {
       return (
         <p className="text-red-500">Late</p>
       )
     } else {
       return (
-        <p>{dueDate}</p>
+        <p>{assignment.due_date}</p>
       )
     }
   }
@@ -353,7 +383,7 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
         clear();
       },
       onError: () => [
-        console.log("Galal membuat assignment")
+        console.log("Gagal membuat assignment")
       ],
       onFinish: () => {
         console.log('Selesai');
@@ -508,7 +538,7 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
           members={members}
           activeWorkspace={activeWorkspace}
           activeMembersStatus={activeMembersStatus}
-          getSpaces={getSpaces}
+          getWorkspaceSpaces={getWorkspaceSpaces}
       >
           <Head title="assignment"/>
 
@@ -545,397 +575,688 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
                 )}
           </div>
           
-          <div className="mb-1">
+          <div className="mb-1 mt-9 md:mt-0 p-7">
             <div className="flex space-x-3">
-                <Link className="flex gap-2 text-slate-600 font-bold hover:bg-sky-400 hover:text-white p-2 rounded-lg transition-colors duration-200">
+                <div className="flex gap-2 text-slate-600 font-bold p-2 rounded-lg cursor-default">
                   <DesktopWindowsOutlinedIcon/>
                   {currentSpace[0].name}
-                </Link>
+                </div>
                 <p className="p-2 ">/</p>
-                <Link className="flex gap-2 text-slate-600 font-bold hover:bg-green-400 hover:text-white p-2 rounded-lg transition-colors duration-200">
+                <div className="flex gap-2 text-slate-600 font-bold p-2 rounded-lg cursor-default">
                   <FolderOpenOutlinedIcon/>
                   {currentProject[0].name} 
-                </Link>
+                </div>
                 <p className="p-2 ">/</p>
-                <Link className="flex gap-2 text-slate-600 font-bold hover:bg-orange-400 hover:text-white p-2 rounded-lg transition-colors duration-200">
+                <div className="flex gap-2 text-slate-600 font-bold p-2 rounded-lg cursor-default">
                   <FormatListBulletedOutlinedIcon/>
-                  {task.name}
-                </Link>
+                  {tasks.name}
+                </div>
             </div>
           </div>
           <hr className="border-slate-400"/>
-          <div className="flex justify-between mt-5">
+          <div className="flex justify-between mt-5 px-7">
               <div className="flex items-center gap-3">
-                  <Link className="flex space-x-1 hover:bg-sky-300 hover:text-white p-2 rounded-lg transition-colors duration-200">
+                  <div 
+                    className={listView 
+                      ? "flex space-x-1 bg-sky-300 text-white p-2 rounded-lg cursor-pointer" 
+                      : "flex space-x-1 hover:bg-sky-300 hover:text-white p-2 rounded-lg transition-colors duration-200 cursor-pointer"
+                    }
+                    onClick={() => {
+                      setListView(true);
+                      setGantView(false);
+                    }}
+                  >
                       <FormatListBulletedOutlinedIcon/>
                       <p>List</p>
-                  </Link>
-                  <Link className="flex space-x-1 hover:bg-sky-300 hover:text-white p-2 rounded-lg transition-colors duration-200">
-                      <DashboardIcon/>
-                      <p>Board</p>
-                  </Link>
-                  <Link className="flex space-x-1 hover:bg-sky-300 hover:text-white p-2 rounded-lg transition-colors duration-200">
+                  </div>
+                  <div 
+                    className={gantView 
+                      ? "flex space-x-1 bg-sky-300 text-white p-2 rounded-lg cursor-pointer"
+                      : "flex space-x-1 hover:bg-sky-300 hover:text-white p-2 rounded-lg transition-colors duration-200 cursor-pointer"
+                    } 
+                    onClick={() => {
+                      setListView(false);
+                      setGantView(true);
+                    }}
+                  >
                       <StackedBarChartOutlinedIcon/>
                       <p>Gantt</p>
-                  </Link>
+                  </div>
               </div>
           </div>
           
-          
-          {assignments && assignments.length > 0 ? (
-            Object.entries(groupAssignments).map(([status, tasks]) => (
-              <div key={status} className="mt-[50px]">
-                <div className="flex flex-row items-center justify-between space-x-7 m-2 mt-5 ">
 
-                  <div className="flex items-center space-x-6">
-                    <KeyboardArrowDownIcon 
-                      className="hover:bg-[#19324928] rounded-md" 
-                      onClick={() => setShowAssignment(status)}
-                    />
-                    {checkStatus(status)}
-                    
-                    <PrimaryButton onClick={() => setAddAssignment(true)}>
-                      <AddOutlinedIcon />
-                      Assignment
-                    </PrimaryButton>
-                  </div>
-
-                  {showAssignment === status && (
-                    <div>
-                      <input
-                          class="input rounded-full px-8 py-3 border-2 border-transparent focus:outline-none focus:border-blue-500 placeholder-gray-400 transition-all duration-300 shadow-md w-96"
-                          placeholder="Search..."
-                          required=""
-                          type="text"
-                          onChange={(e) => SetSearchAssignment(e.target.value)}
-                      />
+          {listView && (
+            <>
+              {assignments && assignments.length > 0 ? (
+                Object.entries(groupAssignments).map(([status, tasks]) => (
+                  <div key={status} className="mt-[50px] px-7">
+                    <div className="flex flex-col space-y-5 md:flex-row items-center justify-between space-x-7 m-2 mt-5 ">
+                      <div className="flex items-center space-x-6">
+                        <KeyboardArrowDownIcon 
+                          className="hover:bg-[#19324928] rounded-md" 
+                          onClick={() => setShowAssignment(status)}
+                        />
+                        {checkStatus(status)}
+                        
+                        <PrimaryButton onClick={() => setAddAssignment(true)}>
+                          <AddOutlinedIcon />
+                          Assignment
+                        </PrimaryButton>
+                      </div>
+    
+                      {showAssignment === status && (
+                        <div>
+                          <input
+                              class="input rounded-full px-8 py-3 border-2 border-transparent focus:outline-none focus:border-blue-500 placeholder-gray-400 transition-all duration-300 shadow-md w-96"
+                              placeholder="Search..."
+                              required=""
+                              type="text"
+                              onChange={(e) => SetSearchAssignment(e.target.value)}
+                          />
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-
-                {showAssignment === status && (
-                  <div className="mt-5 ml-6 overflow-x-auto rounded-lg shadow">
-                    <table className="min-w-full table-auto divide-y divide-gray-200">
-                      <thead className="bg-sky-300 hidden lg:table-header-group">
-                        <tr className="border-b-4 border-gray-400 border-opacity-50">
-                          <th className="p-3 text-sm font-semibold tracking-wide text-left">Name</th>
-                          <th className="p-3 text-sm font-semibold tracking-wide text-left">Assignee</th>
-                          <th className="p-3 text-sm font-semibold tracking-wide text-left">Due Date</th>
-                          <th className="p-3 text-sm font-semibold tracking-wide text-left">Status</th>
-                          <th className="p-3 text-sm font-semibold tracking-wide text-left">Priority</th>
-                          <th className="p-3 text-sm font-semibold tracking-wide text-left"></th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {tasks && tasks.length > 0 ? (
-                          tasks.filter(data => {
-                            if (!searchAssignment || searchAssignment.trim === '') return true;
-                            const query = searchAssignment.toLowerCase();
-                            return(
-                              data.name.toLowerCase().includes(query)
-                            );
-                          })
-                          .map(assignment => (
-                            <tr className="bg-white lg:table-row flex flex-col lg:flex-row">
-                              <td 
-                                className="p-3 flex justify-between text-gray-700 lg:min-w-[200px] whitespace-nowrap cursor-pointer hover:bg-slate-100" 
-                                data-label="Name"
-                                onMouseOver={() => setHoverAssignment(assignment)}
-                                onMouseLeave={() => setHoverAssignment(null)}
-                                onClick={(e) => {
-                                  getFiles(e, assignment);
-                                }}
-                              >
-                                {editingAssignment === assignment.id ? (
-                                  <input
-                                    className="border border-gray-300 rounded px-2 py-1 w-full"
-                                    defaultValue={editedName}
-                                    onChange={(e) => setData('name', e.target.value)}
-                                    onBlur={() => renameAssignment(assignment)}
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter') renameAssignment(e, assignment);
-                                      if (e.key === 'Escape') setEditingAssignment(null);
-                                    }}
-                                    autoFocus
-                                  />
-                                ) : (
-                                  <>
-                                    {assignment.name}
-                                    {hoverAssignment === assignment && (
-                                      <DriveFileRenameOutlineIcon
-                                        className="hover:bg-slate-300 rounded-full"
-                                        onClick={(e) => {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                          setEditingAssignment(assignment.id);
-                                          setEditedName(assignment.name);
-                                        }}
-                                      />
-                                    )}
-                                  </>
-                                )}
-                              </td>
-                              
-                              {assignment.status === 'Completed' ? (
-                                <td 
-                                  className="p-3 text-sm font-bold text-blue-500 whitespace-nowrap" 
-                                  data-label="Assign"
-                                >
-                                  {checkUser(assignment.space_member_id)}
-                                  
-                                </td>
-                              ) : 
-                                <td 
-                                  className="p-3 text-sm font-bold text-blue-500 whitespace-nowrap cursor-pointer hover:bg-slate-100" 
-                                  data-label="Assign"
-                                  onClick={() => setToggleAssign2(assignment)}
-                                >
-                                  {checkUser(assignment.space_member_id)}
-                                  
-                                </td>
-                              }
-                              {assignment.due_date ? (
-                                <td 
-                                  className="p-3 flex justify-between text-sm text-gray-700 whitespace-nowrap cursor-pointer hover:bg-slate-100" 
-                                  data-label="Due Date"
-                                  onClick={() => setToggleDue2(assignment)}
-                                  onMouseOver={() => setHoverDueDate(assignment)}
-                                  onMouseLeave={() => setHoverDueDate(null)}
-                                >
-                                  {checkDue(assignment.due_date)}
-                                  {hoverDueDate === assignment && (
-                                    <CloseIcon 
-                                      className="hover:bg-slate-300 rounded-full"
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        data.due_date = ''
-                                        updateDue(e, assignment)
-                                      }}
-                                    /> 
-                                  )}
-                                </td>
-                              ) : 
-                                <td 
-                                  className="p-3 text-sm text-gray-700 whitespace-nowrap cursor-pointer hover:bg-slate-100" 
-                                  data-label="Due Date"
-                                  onClick={() => setToggleDue2(assignment)}
-                                >
-                                  <CalendarMonthOutlinedIcon/>
-                                </td>
-                              }
-                              <td 
-                                className="p-3 text-sm whitespace-nowrap cursor-pointer hover:bg-slate-100" 
-                                data-label="Status"
-                                onClick={() => setToggleStatus(assignment)}
-                              >
-                                {checkStatus(assignment.status)}
-                              </td>
-                              <td 
-                                className="p-3 text-sm whitespace-nowrap cursor-pointer hover:bg-slate-100" 
-                                data-label="Priority"
-                                onClick={() => setTogglePriority2(assignment)}
-                              >
-                                {checkPriority(assignment.priority)}
-                              </td>
-                              <td className="p-3 text-sm whitespace-nowrap space-x-5" data-label="">
-                                <DeleteIcon 
-                                  className="text-red-500 hover:bg-slate-200 rounded-full cursor-pointer"
-                                  onClick={(e) => deleteAssignment(e, assignment)}
-                                />
-                                
-                              </td>
-
-                              {toggleAssign2 === assignment&& (
-                                <AssignModal2 open={toggleAssign2} onClose={() => {setToggleAssign2(null)}}>
-                                    <div>
-                                      <input
-                                          class="input rounded-full px-5 border-2 border-transparent focus:outline-none focus:border-blue-500 placeholder-gray-400 transition-all duration-300 shadow-md w-full"
-                                          placeholder="Search..."
-                                          required=""
-                                          type="text"
-                                          onChange={(e) => setSearch(e.target.value)}
-                                      />
-                                    </div>
-                                    <div className="p-1 mt-5 max-h-[150px] overflow-y-auto">
-                                      {members && members.length > 0 ? (
-                                        members.filter(user => {
-                                          if (!search || search.trim === '') return true;
-                                          const query = search.toLowerCase();
-                                          return (
-                                            user.user?.name?.toLowerCase().includes(query) || 
-                                            search.user?.email?.toLowerCase().includes(query)
-                                          );
-                                        })
-                                        .map(member => (
-                                          <div className="hover:bg-slate-100 transition-colors duration-150 pl-2 rounded-lg cursor-pointer">
-                                            <div 
-                                              className="flex items-center space-x-2"
-                                              onClick={(e) => {
-                                                data.space_member_id = member.user_id
-                                                setToggleAssign(false);
-                                                updateAssignee(e, assignment)
-                                              }}
-                                            >
-                                              <img src={
-                                                  member.user.photo instanceof File 
-                                                  ? URL.createObjectURL( member.user.photo) 
-                                                  :  member.user.photo
-                                                  ? `/storage/${ member.user.photo}` 
-                                                  : 'https://cdn-icons-png.flaticon.com/512/9815/9815472.png'
-                                              }  alt="Profile" width="25" className='my-5 rounded-full'/> 
-                                              <p>{member.user.name}</p>
-                                            </div>
-                                          </div>
-                                        ))
-                                      ) : 
-                                        null
-                                      }
-                                    </div>
-                                </AssignModal2>
-                              )}
-
-                              {toggleStatus === assignment && (
-                                <StatusModal open={toggleStatus} onClose={() => {setToggleStatus(null)}}>
-                                  <div className="max-h-[150px] overflow-y-auto space-y-3">
-                                    <div 
-                                      className="flex items-center p-1 space-x-2 hover:bg-slate-100 transition-colors duration-150 cursor-pointer w-full rounded-lg"
-                                      onClick={(e) => {
-                                        data.status = 'To Do'
-                                        setToggleStatus(null);
-                                        updateStatus(e, assignment)
-                                      }}
-                                    >
-                                      <RadioButtonCheckedOutlinedIcon/>
-                                      <p className="p-1">To Do</p>
-                                    </div>
-                                    <div 
-                                      className="flex items-center space-x-2 hover:bg-sky-100 text-blue-500 p-1 transition-colors duration-150 cursor-pointer w-full rounded-lg"
-                                      onClick={(e) => {
-                                        data.status = 'In Progress'
-                                        setToggleStatus(null);
-                                        updateStatus(e, assignment)
-
-                                      }}
-                                    >
-                                      <RadioButtonCheckedOutlinedIcon/>
-                                      <p className="p-1">In Progress</p>
-                                    </div>
-                                    <div 
-                                      className="flex items-center space-x-2 hover:bg-green-100 text-green-600 p-1 transition-colors duration-150 cursor-pointer w-full rounded-lg"
-                                      onClick={(e) => {
-                                        data.status = 'Completed'
-                                        setToggleStatus(null);
-                                        updateStatus(e, assignment)
-                                      }}
-                                    >
-                                      <RadioButtonCheckedOutlinedIcon/>
-                                      <p className="p-1">Completed</p>
-                                    </div>
-                                  </div>
-                                </StatusModal>
-                              )}
-
-                              {togglePriority2 === assignment && (
-                                <PriorityModal2 open={togglePriority2} onClose={() => setTogglePriority2(null)}>
-                                  <div className="max-h-[150px] overflow-y-auto space-y-3">
-                                    <div 
-                                      className="flex items-center space-x-2 hover:bg-red-100 transition-colors duration-150 cursor-pointer w-full rounded-lg"
-                                      onClick={(e) => {
-                                        data.priority = 'High'
-                                        setTogglePriority2(null);
-                                        updatePriority(e, assignment)
-                                      }}
-                                    >
-                                      <OutlinedFlagOutlinedIcon className="text-red-500"/>
-                                      <p className="p-1">High</p>
-                                    </div>
-                                    <div 
-                                      className="flex items-center space-x-2 hover:bg-orange-100 transition-colors duration-150 cursor-pointer w-full rounded-lg"
-                                      onClick={(e) => {
-                                        data.priority = 'Urgent'
-                                        setTogglePriority2(null);
-                                        updatePriority(e, assignment)
-                                      }}
-                                    >
-                                      <OutlinedFlagOutlinedIcon className="text-orange-500"/>
-                                      <p className="p-1">Urgent</p>
-                                    </div>
-                                    <div 
-                                      className="flex items-center space-x-2 hover:bg-green-100 transition-colors duration-150 cursor-pointer w-full rounded-lg"
-                                      onClick={(e) => {
-                                        data.priority = 'Normal'
-                                        setTogglePriority2(null);
-                                        updatePriority(e, assignment)
-                                      }}
-                                    >
-                                      <OutlinedFlagOutlinedIcon className="text-green-500"/>
-                                      <p className="p-1">Normal</p>
-                                    </div>
-                                    <div 
-                                      className="flex items-center space-x-2 hover:bg-slate-100 transition-colors duration-150 cursor-pointer w-full rounded-lg"
-                                      onClick={(e) => {
-                                        data.priority = 'Low'
-                                        setTogglePriority2(null);
-                                        updatePriority(e, assignment)
-                                      }}
-                                    >
-                                      <OutlinedFlagOutlinedIcon/>
-                                      <p className="p-1">Low</p>
-                                    </div>
-                                    <div 
-                                      className="flex items-center space-x-2 hover:bg-slate-100 transition-colors duration-150 cursor-pointer w-full rounded-lg"
-                                      onClick={(e) => {
-                                        data.priority = ''
-                                        setTogglePriority2(null);
-                                        updatePriority(e, assignment)
-                                      }}
-                                    >
-                                      <NotInterestedIcon/>
-                                      <p className="p-1">Clear</p>
-                                    </div>
-                                  </div>
-                                </PriorityModal2>
-                              )}
-
-                              {toggledue2 === assignment && (
-                                <div className="absolute right-[380px] z-50 mt-2">
-                                    <DatePicker
-                                      selected={assignment.due_date}
-                                      onChange={(date, e) => {
-                                        setSelectedDate(date);
-                                        const year = date.getFullYear();
-                                        const month = String(date.getMonth() + 1).padStart(2, '0');
-                                        const day = String(date.getDate()).padStart(2, '0');
-                                        data.due_date = `${year}-${month}-${day}`
-                                        updateDue(e, assignment)
-                                      }}
-                                      inline
-                                      minDate={new Date()}
-                                    />
-                                </div>
-                              )}
-
+    
+                    {showAssignment === status && (
+                      <div className="my-10 ml-6 overflow-x-auto max-h-[300px] overflow-y-auto rounded-lg shadow">
+                        <table className="min-w-full table-auto divide-y divide-gray-200">
+                          <thead className="bg-sky-300 hidden lg:table-header-group">
+                            <tr className="border-b-4 border-gray-400 border-opacity-50">
+                              <th className="p-3 text-sm font-semibold tracking-wide text-left">Name</th>
+                              <th className="p-3 text-sm font-semibold tracking-wide text-left">Assignee</th>
+                              <th className="p-3 text-sm font-semibold tracking-wide text-left">Due Date</th>
+                              <th className="p-3 text-sm font-semibold tracking-wide text-left">Status</th>
+                              <th className="p-3 text-sm font-semibold tracking-wide text-left">Priority</th>
+                              <th className="p-3 text-sm font-semibold tracking-wide text-left"></th>
                             </tr>
-                          ))
-                        ) : 
-                          null
-                        }
-                      </tbody>
-                    </table>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100">
+                            {tasks && tasks.length > 0 ? (
+                              tasks.filter(data => {
+                                if (!searchAssignment || searchAssignment.trim === '') return true;
+                                const query = searchAssignment.toLowerCase();
+                                return(
+                                  data.name.toLowerCase().includes(query)
+                                );
+                              })
+                              .map(assignment => (
+                                currentUserStatus === 'owner' || currentUserStatus === 'admin' 
+                                ? 
+                                  <tr className="bg-white lg:table-row flex flex-col lg:flex-row">
+                                    <td 
+                                      className="p-3 flex justify-between text-gray-700 lg:min-w-[200px] whitespace-nowrap cursor-pointer hover:bg-slate-100" 
+                                      data-label="Name"
+                                      onMouseOver={() => setHoverAssignment(assignment)}
+                                      onMouseLeave={() => setHoverAssignment(null)}
+                                      onClick={(e) => {
+                                        getFiles(e, assignment);
+                                      }}
+                                    >
+                                      {editingAssignment === assignment.id ? (
+                                        <input
+                                          className="border border-gray-300 rounded px-2 py-1 w-full"
+                                          defaultValue={editedName}
+                                          onChange={(e) => setData('name', e.target.value)}
+                                          onBlur={() => renameAssignment(assignment)}
+                                          onKeyDown={(e) => {
+                                            if (e.key === 'Enter') renameAssignment(e, assignment);
+                                            if (e.key === 'Escape') setEditingAssignment(null);
+                                          }}
+                                          autoFocus
+                                        />
+                                      ) : (
+                                        <>
+                                          {assignment.name}
+                                          {hoverAssignment === assignment && (
+                                            <DriveFileRenameOutlineIcon
+                                              className="hover:bg-slate-300 rounded-full"
+                                              onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                setEditingAssignment(assignment.id);
+                                                setEditedName(assignment.name);
+                                              }}
+                                            />
+                                          )}
+                                        </>
+                                      )}
+                                    </td>
+                                    
+                                    {assignment.status === 'Completed' ? (
+                                      <td 
+                                        className="p-3 text-sm font-bold text-blue-500 whitespace-nowrap" 
+                                        data-label="Assign"
+                                      >
+                                        {checkUser(assignment.space_member_id)}
+                                        
+                                      </td>
+                                      
+                                    ) : 
+                                      <td 
+                                        className="p-3 text-sm font-bold text-blue-500 whitespace-nowrap cursor-pointer hover:bg-slate-100" 
+                                        data-label="Assign"
+                                        onClick={() => setToggleAssign2(assignment)}
+                                      >
+                                        {checkUser(assignment.space_member_id)}  
+                                      </td>
+                                    }
+                                    {assignment.due_date ? (
+                                      <td 
+                                        className="p-3 flex justify-between text-sm text-gray-700 whitespace-nowrap cursor-pointer hover:bg-slate-100" 
+                                        data-label="Due Date"
+                                        onClick={() => setToggleDue2(assignment)}
+                                        onMouseOver={() => setHoverDueDate(assignment)}
+                                        onMouseLeave={() => setHoverDueDate(null)}
+                                      >
+                                        {checkDue(assignment)}
+                                        {hoverDueDate === assignment && (
+                                          <CloseIcon 
+                                            className="hover:bg-slate-300 rounded-full"
+                                            onClick={(e) => {
+                                              e.preventDefault();
+                                              e.stopPropagation();
+                                              data.due_date = ''
+                                              updateDue(e, assignment)
+                                            }}
+                                          /> 
+                                        )}
+                                      </td>
+                                    ) : 
+                                      <td 
+                                        className="p-3 text-sm text-gray-700 whitespace-nowrap cursor-pointer hover:bg-slate-100" 
+                                        data-label="Due Date"
+                                        onClick={() => setToggleDue2(assignment)}
+                                      >
+                                        <CalendarMonthOutlinedIcon/>
+                                      </td>
+                                    }
+                                    {assignment.status === 'Completed' ? (
+                                      <td 
+                                        className="p-3 text-sm whitespace-nowrap" 
+                                        data-label="Status"
+                                      >
+                                        {checkStatus(assignment.status)}
+                                      </td>
+                                    ) : 
+                                        <td 
+                                        className="p-3 text-sm whitespace-nowrap cursor-pointer hover:bg-slate-100" 
+                                        data-label="Status"
+                                        onClick={() => setToggleStatus(assignment)}
+                                      >
+                                        {checkStatus(assignment.status)}
+                                      </td>
+                                    }
+                                    <td 
+                                      className="p-3 text-sm whitespace-nowrap cursor-pointer hover:bg-slate-100" 
+                                      data-label="Priority"
+                                      onClick={() => setTogglePriority2(assignment)}
+                                    >
+                                      {checkPriority(assignment.priority)}
+                                    </td>
+                                    <td className="p-3 text-sm whitespace-nowrap space-x-5" data-label="">
+                                      <DeleteIcon 
+                                        className="text-red-500 hover:bg-slate-200 rounded-full cursor-pointer"
+                                        onClick={(e) => deleteAssignment(e, assignment)}
+                                      />
+                                      
+                                    </td>
+      
+                                    {toggleAssign2 === assignment&& (
+                                      <AssignModal2 open={toggleAssign2} onClose={() => {setToggleAssign2(null)}}>
+                                          <div>
+                                            <input
+                                                class="input rounded-full px-5 border-2 border-transparent focus:outline-none focus:border-blue-500 placeholder-gray-400 transition-all duration-300 shadow-md w-full"
+                                                placeholder="Search..."
+                                                required=""
+                                                type="text"
+                                                onChange={(e) => setSearch(e.target.value)}
+                                            />
+                                          </div>
+                                          <div className="p-1 mt-5 max-h-[150px] overflow-y-auto">
+                                            {members && members.length > 0 ? (
+                                              members.filter(user => {
+                                                if (!search || search.trim === '') return true;
+                                                const query = search.toLowerCase();
+                                                return (
+                                                  user.user?.name?.toLowerCase().includes(query) || 
+                                                  search.user?.email?.toLowerCase().includes(query)
+                                                );
+                                              })
+                                              .map(member => (
+                                                <div className="hover:bg-slate-100 transition-colors duration-150 pl-2 rounded-lg cursor-pointer">
+                                                  <div 
+                                                    className="flex items-center space-x-2"
+                                                    onClick={(e) => {
+                                                      data.space_member_id = member.user_id
+                                                      setToggleAssign(false);
+                                                      updateAssignee(e, assignment)
+                                                    }}
+                                                  >
+                                                    <img src={
+                                                        member.user.photo instanceof File 
+                                                        ? URL.createObjectURL( member.user.photo) 
+                                                        :  member.user.photo
+                                                        ? `/storage/${ member.user.photo}` 
+                                                        : 'https://cdn-icons-png.flaticon.com/512/9815/9815472.png'
+                                                    }  alt="Profile" width="25" className='my-5 rounded-full'/> 
+                                                    <p>{member.user.name}</p>
+                                                  </div>
+                                                </div>
+                                              ))
+                                            ) : 
+                                              null
+                                            }
+                                          </div>
+                                      </AssignModal2>
+                                    )}
+      
+                                    {toggleStatus === assignment && (
+                                      <StatusModal open={toggleStatus} onClose={() => {setToggleStatus(null)}}>
+                                        <div className="max-h-[150px] overflow-y-auto space-y-3">
+                                          <div 
+                                            className="flex items-center p-1 space-x-2 hover:bg-slate-100 transition-colors duration-150 cursor-pointer w-full rounded-lg"
+                                            onClick={(e) => {
+                                              data.status = 'To Do'
+                                              setToggleStatus(null);
+                                              updateStatus(e, assignment)
+                                            }}
+                                          >
+                                            <RadioButtonCheckedOutlinedIcon/>
+                                            <p className="p-1">To Do</p>
+                                          </div>
+                                          <div 
+                                            className="flex items-center space-x-2 hover:bg-sky-100 text-blue-500 p-1 transition-colors duration-150 cursor-pointer w-full rounded-lg"
+                                            onClick={(e) => {
+                                              data.status = 'In Progress'
+                                              setToggleStatus(null);
+                                              updateStatus(e, assignment)
+      
+                                            }}
+                                          >
+                                            <RadioButtonCheckedOutlinedIcon/>
+                                            <p className="p-1">In Progress</p>
+                                          </div>
+                                          <div 
+                                            className="flex items-center space-x-2 hover:bg-green-100 text-green-600 p-1 transition-colors duration-150 cursor-pointer w-full rounded-lg"
+                                            onClick={(e) => {
+                                              data.status = 'Completed'
+                                              setToggleStatus(null);
+                                              updateStatus(e, assignment)
+                                            }}
+                                          >
+                                            <RadioButtonCheckedOutlinedIcon/>
+                                            <p className="p-1">Completed</p>
+                                          </div>
+                                        </div>
+                                      </StatusModal>
+                                    )}
+      
+                                    {togglePriority2 === assignment && (
+                                      <PriorityModal2 open={togglePriority2} onClose={() => setTogglePriority2(null)}>
+                                        <div className="max-h-[150px] overflow-y-auto space-y-3">
+                                          <div 
+                                            className="flex items-center space-x-2 hover:bg-red-100 transition-colors duration-150 cursor-pointer w-full rounded-lg"
+                                            onClick={(e) => {
+                                              data.priority = 'High'
+                                              setTogglePriority2(null);
+                                              updatePriority(e, assignment)
+                                            }}
+                                          >
+                                            <OutlinedFlagOutlinedIcon className="text-red-500"/>
+                                            <p className="p-1">High</p>
+                                          </div>
+                                          <div 
+                                            className="flex items-center space-x-2 hover:bg-orange-100 transition-colors duration-150 cursor-pointer w-full rounded-lg"
+                                            onClick={(e) => {
+                                              data.priority = 'Urgent'
+                                              setTogglePriority2(null);
+                                              updatePriority(e, assignment)
+                                            }}
+                                          >
+                                            <OutlinedFlagOutlinedIcon className="text-orange-500"/>
+                                            <p className="p-1">Urgent</p>
+                                          </div>
+                                          <div 
+                                            className="flex items-center space-x-2 hover:bg-green-100 transition-colors duration-150 cursor-pointer w-full rounded-lg"
+                                            onClick={(e) => {
+                                              data.priority = 'Normal'
+                                              setTogglePriority2(null);
+                                              updatePriority(e, assignment)
+                                            }}
+                                          >
+                                            <OutlinedFlagOutlinedIcon className="text-green-500"/>
+                                            <p className="p-1">Normal</p>
+                                          </div>
+                                          <div 
+                                            className="flex items-center space-x-2 hover:bg-slate-100 transition-colors duration-150 cursor-pointer w-full rounded-lg"
+                                            onClick={(e) => {
+                                              data.priority = 'Low'
+                                              setTogglePriority2(null);
+                                              updatePriority(e, assignment)
+                                            }}
+                                          >
+                                            <OutlinedFlagOutlinedIcon/>
+                                            <p className="p-1">Low</p>
+                                          </div>
+                                          <div 
+                                            className="flex items-center space-x-2 hover:bg-slate-100 transition-colors duration-150 cursor-pointer w-full rounded-lg"
+                                            onClick={(e) => {
+                                              data.priority = ''
+                                              setTogglePriority2(null);
+                                              updatePriority(e, assignment)
+                                            }}
+                                          >
+                                            <NotInterestedIcon/>
+                                            <p className="p-1">Clear</p>
+                                          </div>
+                                        </div>
+                                      </PriorityModal2>
+                                    )}
+      
+                                    {toggledue2 === assignment && (
+                                      <div className="fixed z-50 inset-0 flex justify-center items-center transition-colors ">
+                                          <DatePicker
+                                            selected={assignment.due_date}
+                                            onChange={(date, e) => {
+                                              setSelectedDate(date);
+                                              const year = date.getFullYear();
+                                              const month = String(date.getMonth() + 1).padStart(2, '0');
+                                              const day = String(date.getDate()).padStart(2, '0');
+                                              data.due_date = `${year}-${month}-${day}`
+                                              updateDue(e, assignment)
+                                            }}
+                                            inline
+                                            minDate={new Date()}
+                                          />
+                                      </div>
+                                    )}
+                                  </tr>
+                                : 
+                                  <tr className="bg-white lg:table-row flex flex-col lg:flex-row">
+                                    <td 
+                                      className="p-3 flex justify-between text-gray-700 lg:min-w-[200px] whitespace-nowrap cursor-pointer hover:bg-slate-100" 
+                                      data-label="Name"
+                                      onClick={(e) => {
+                                        getFiles(e, assignment);
+                                      }}
+                                    >
+                                      {editingAssignment === assignment.id ? (
+                                        <input
+                                          className="border border-gray-300 rounded px-2 py-1 w-full"
+                                          defaultValue={editedName}
+                                          onChange={(e) => setData('name', e.target.value)}
+                                          onBlur={() => renameAssignment(assignment)}
+                                          onKeyDown={(e) => {
+                                            if (e.key === 'Enter') renameAssignment(e, assignment);
+                                            if (e.key === 'Escape') setEditingAssignment(null);
+                                          }}
+                                          autoFocus
+                                        />
+                                      ) : (
+                                        <>
+                                          {assignment.name}
+                                        </>
+                                      )}
+                                    </td>
+                                    
+                                    {assignment.status === 'Completed' ? (
+                                      <td 
+                                        className="p-3 text-sm font-bold text-blue-500 whitespace-nowrap" 
+                                        data-label="Assign"
+                                      >
+                                        {checkUser(assignment.space_member_id)}
+                                        
+                                      </td>
+                                    ) : 
+                                      <td 
+                                        className="relative p-3 text-sm font-bold text-blue-500 whitespace-nowrap" 
+                                        data-label="Assign"
+                                      >
+                                        {checkUser(assignment.space_member_id)} 
+
+                                        {toggleAssign2 === assignment&& (
+                                      <AssignModal2 open={toggleAssign2} onClose={() => {setToggleAssign2(null)}}>
+                                          <div>
+                                            <input
+                                                class="input rounded-full px-5 border-2 border-transparent focus:outline-none focus:border-blue-500 placeholder-gray-400 transition-all duration-300 shadow-md w-full"
+                                                placeholder="Search..."
+                                                required=""
+                                                type="text"
+                                                onChange={(e) => setSearch(e.target.value)}
+                                            />
+                                          </div>
+                                          <div className="p-1 mt-5 max-h-[150px] overflow-y-auto">
+                                            {members && members.length > 0 ? (
+                                              members.filter(user => {
+                                                if (!search || search.trim === '') return true;
+                                                const query = search.toLowerCase();
+                                                return (
+                                                  user.user?.name?.toLowerCase().includes(query) || 
+                                                  search.user?.email?.toLowerCase().includes(query)
+                                                );
+                                              })
+                                              .map(member => (
+                                                <div className="hover:bg-slate-100 transition-colors duration-150 pl-2 rounded-lg cursor-pointer">
+                                                  <div 
+                                                    className="flex items-center space-x-2"
+                                                    onClick={(e) => {
+                                                      data.space_member_id = member.user_id
+                                                      setToggleAssign(false);
+                                                      updateAssignee(e, assignment)
+                                                    }}
+                                                  >
+                                                    <img src={
+                                                        member.user.photo instanceof File 
+                                                        ? URL.createObjectURL( member.user.photo) 
+                                                        :  member.user.photo
+                                                        ? `/storage/${ member.user.photo}` 
+                                                        : 'https://cdn-icons-png.flaticon.com/512/9815/9815472.png'
+                                                    }  alt="Profile" width="25" className='my-5 rounded-full'/> 
+                                                    <p>{member.user.name}</p>
+                                                  </div>
+                                                </div>
+                                              ))
+                                            ) : 
+                                              null
+                                            }
+                                          </div>
+                                      </AssignModal2>
+                                    )} 
+                                      </td>
+                                    }
+                                    {assignment.due_date ? (
+                                      <td 
+                                        className="p-3 flex justify-between text-sm text-gray-700 whitespace-nowrap" 
+                                        data-label="Due Date"
+                                      >
+                                        {checkDue(assignment)}
+                                      </td>
+                                    ) : 
+                                      <td 
+                                        className="p-3 text-sm text-gray-700 whitespace-nowrap" 
+                                        data-label="Due Date"
+                                        onClick={() => setToggleDue2(assignment)}
+                                      >
+                                        <CalendarMonthOutlinedIcon/>
+                                      </td>
+                                    }
+                                    <td 
+                                      className="relative p-3 text-sm whitespace-nowrap" 
+                                      data-label="Status"
+                                    >
+                                      {checkStatus(assignment.status)}
+
+                                       {toggleStatus === assignment && (
+                                      <StatusModal open={toggleStatus} onClose={() => {setToggleStatus(null)}}>
+                                        <div className="max-h-[150px] overflow-y-auto space-y-3">
+                                          <div 
+                                            className="flex items-center p-1 space-x-2 hover:bg-slate-100 transition-colors duration-150 cursor-pointer w-full rounded-lg"
+                                            onClick={(e) => {
+                                              data.status = 'To Do'
+                                              setToggleStatus(null);
+                                              updateStatus(e, assignment)
+                                            }}
+                                          >
+                                            <RadioButtonCheckedOutlinedIcon/>
+                                            <p className="p-1">To Do</p>
+                                          </div>
+                                          <div 
+                                            className="flex items-center space-x-2 hover:bg-sky-100 text-blue-500 p-1 transition-colors duration-150 cursor-pointer w-full rounded-lg"
+                                            onClick={(e) => {
+                                              data.status = 'In Progress'
+                                              setToggleStatus(null);
+                                              updateStatus(e, assignment)
+      
+                                            }}
+                                          >
+                                            <RadioButtonCheckedOutlinedIcon/>
+                                            <p className="p-1">In Progress</p>
+                                          </div>
+                                          <div 
+                                            className="flex items-center space-x-2 hover:bg-green-100 text-green-600 p-1 transition-colors duration-150 cursor-pointer w-full rounded-lg"
+                                            onClick={(e) => {
+                                              data.status = 'Completed'
+                                              setToggleStatus(null);
+                                              updateStatus(e, assignment)
+                                            }}
+                                          >
+                                            <RadioButtonCheckedOutlinedIcon/>
+                                            <p className="p-1">Completed</p>
+                                          </div>
+                                        </div>
+                                      </StatusModal>
+                                    )}
+                                    </td>
+                                    <td 
+                                      className="p-3 text-sm whitespace-nowrap" 
+                                      data-label="Priority"
+                                    >
+                                      {checkPriority(assignment.priority)}
+                                        {togglePriority2 === assignment && (
+                                          <PriorityModal2 open={togglePriority2} onClose={() => setTogglePriority2(null)}>
+                                            <div className="max-h-[150px] overflow-y-auto space-y-3">
+                                              <div 
+                                                className="flex items-center space-x-2 hover:bg-red-100 transition-colors duration-150 cursor-pointer w-full rounded-lg"
+                                                onClick={(e) => {
+                                                  data.priority = 'High'
+                                                  setTogglePriority2(null);
+                                                  updatePriority(e, assignment)
+                                                }}
+                                              >
+                                                <OutlinedFlagOutlinedIcon className="text-red-500"/>
+                                                <p className="p-1">High</p>
+                                              </div>
+                                              <div 
+                                                className="flex items-center space-x-2 hover:bg-orange-100 transition-colors duration-150 cursor-pointer w-full rounded-lg"
+                                                onClick={(e) => {
+                                                  data.priority = 'Urgent'
+                                                  setTogglePriority2(null);
+                                                  updatePriority(e, assignment)
+                                                }}
+                                              >
+                                                <OutlinedFlagOutlinedIcon className="text-orange-500"/>
+                                                <p className="p-1">Urgent</p>
+                                              </div>
+                                              <div 
+                                                className="flex items-center space-x-2 hover:bg-green-100 transition-colors duration-150 cursor-pointer w-full rounded-lg"
+                                                onClick={(e) => {
+                                                  data.priority = 'Normal'
+                                                  setTogglePriority2(null);
+                                                  updatePriority(e, assignment)
+                                                }}
+                                              >
+                                                <OutlinedFlagOutlinedIcon className="text-green-500"/>
+                                                <p className="p-1">Normal</p>
+                                              </div>
+                                              <div 
+                                                className="flex items-center space-x-2 hover:bg-slate-100 transition-colors duration-150 cursor-pointer w-full rounded-lg"
+                                                onClick={(e) => {
+                                                  data.priority = 'Low'
+                                                  setTogglePriority2(null);
+                                                  updatePriority(e, assignment)
+                                                }}
+                                              >
+                                                <OutlinedFlagOutlinedIcon/>
+                                                <p className="p-1">Low</p>
+                                              </div>
+                                              <div 
+                                                className="flex items-center space-x-2 hover:bg-slate-100 transition-colors duration-150 cursor-pointer w-full rounded-lg"
+                                                onClick={(e) => {
+                                                  data.priority = ''
+                                                  setTogglePriority2(null);
+                                                  updatePriority(e, assignment)
+                                                }}
+                                              >
+                                                <NotInterestedIcon/>
+                                                <p className="p-1">Clear</p>
+                                              </div>
+                                            </div>
+                                          </PriorityModal2>
+                                        )}
+                                    </td>
+                                    
+      
+                                    
+      
+                                   
+      
+                                   
+      
+                                    {toggledue2 === assignment && (
+                                      <div className="absolute right-[380px] z-50 mt-2">
+                                          <DatePicker
+                                            selected={assignment.due_date}
+                                            onChange={(date, e) => {
+                                              setSelectedDate(date);
+                                              const year = date.getFullYear();
+                                              const month = String(date.getMonth() + 1).padStart(2, '0');
+                                              const day = String(date.getDate()).padStart(2, '0');
+                                              data.due_date = `${year}-${month}-${day}`
+                                              updateDue(e, assignment)
+                                            }}
+                                            inline
+                                            minDate={new Date()}
+                                          />
+                                      </div>
+                                    )}
+                                  </tr>
+                              ))
+                            ) : 
+                              null
+                            }
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            ))
-            
-          ) :
-            <div className="flex justify-end">
-              <PrimaryButton onClick={() => setAddAssignment(true)}>
-                <AddOutlinedIcon />
-                Assignment
-              </PrimaryButton>
-            </div>
-          }
+                ))
+                
+              ) :
+                <div className="flex justify-end">
+                  <PrimaryButton onClick={() => setAddAssignment(true)}>
+                    <AddOutlinedIcon />
+                    Assignment
+                  </PrimaryButton>
+                </div>
+              }
+            </>
+          )}
+
+          {gantView && (
+            <>
+              <div className="m-8 px-2">
+                <Willow>
+                  <Gantt 
+                    tasks={mappedAssignments} 
+                    links={links} 
+                    scales={scales} 
+                    readonly={readonly}
+                  />
+                </Willow>
+              </div>  
+            </>
+          )}
 
          
 
@@ -1214,7 +1535,7 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
           {assignmentData && (
             <>
               <h1 className="text-2xl font-bold mb-4">{assignmentData.name}</h1>
-              <div className="flex gap-4">
+              <div className="flex gap-4 flex-col md:flex-row">
                 {/* Left Side */}
                 <div className="p-6 space-y-6 basis-2/3 bg-white border rounded shadow">
                   <div className="grid grid-cols-2 gap-6">

@@ -4,7 +4,7 @@ export default function StatusModal( { open, onClose, children} ) {
         <div 
             onClick={onClose} 
             className={`
-                fixed z-50 top-[-170px] left-[80rem] inset-0 flex justify-center items-center transition-colors ${open ? "visible" : "invisible"}
+                absolute top-[200px] lg:left-[600px] z-50 inset-0 flex justify-center items-center transition-colors ${open ? "visible" : "invisible"}
             `}>
             
             {/* Modal page */}

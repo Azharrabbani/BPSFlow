@@ -6,19 +6,22 @@ use App\Http\Requests\TaskRequest;
 use App\Models\Tasks;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
+use Inertia\Inertia;
 
 class TasksController extends Controller
 {
     public function store(TaskRequest $request)
     {
-        $data = $request->validated();
-
-        Tasks::create([
-            'project_id' => $data['project_id'],
-            'name' => $data['name'],
-        ]);
-
-        return Redirect::route('dashboard');
+        try{
+            $data = $request->validated();
+    
+            Tasks::create([
+                'project_id' => $data['project_id'],
+                'name' => $data['name'],
+            ]);
+        } catch(\Exception $e) {
+            return Inertia::render('Errors/ServerError');
+        }
     }
 
     public function update(TaskRequest $request, Tasks $tasks)
@@ -28,19 +31,24 @@ class TasksController extends Controller
         $tasks->update([
             'name' => $data['name'],
         ]);
-
-        return Redirect::route('dashboard');
     }
 
     public function destroy(tasks $tasks)
     {
         $tasks->delete();
-
-        return Redirect::route('dashboard');
     }
 
     public function getTasks($project_id)
     {
         return Tasks::where('project_id', $project_id)->get();
+    }
+
+    public function checkTask($taskId) 
+    {
+        if (Tasks::where('id', $taskId)->firstOrFail()) {
+            return true;
+        }
+
+        return false;
     }
 }

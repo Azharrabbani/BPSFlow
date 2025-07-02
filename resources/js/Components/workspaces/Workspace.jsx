@@ -3,7 +3,7 @@ export default function Workspace( { open,  onClose, children} ) {
 
         <div
             onClick={onClose} 
-            className={`relative z-50 ${open ? 'visible inset-0 flex justify-center scale-100 opacity-100' : 'invisible scale-125 opacity-0'} transition-all`}
+            className={`absolute top-[100px]  z-50 ${open ? 'visible inset-0 flex justify-center scale-100 opacity-100' : 'invisible scale-125 opacity-0'} transition-all`}
         >
             <div 
                 onClick={(e) => e.stopPropagation()}

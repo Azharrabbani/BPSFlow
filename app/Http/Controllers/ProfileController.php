@@ -23,18 +23,19 @@ class ProfileController extends Controller
     public function edit(Request $request): Response
     {
         $user = Auth::user();
-        
-        $workspace = Workspace_members::where('user_id', $user->id)
-            ->whereHas('workspace', function($query) {
-                $query->where('status', WorkspaceStatus::ACTIVE);
-            })
-            ->first();
 
+        $activeWorkspaces = new ActiveWorkspaceController();
+        
+        $workspace = $activeWorkspaces->getActiveWorkspace($user->id);
+
+        $activeMembersStatus = Workspace_members::where('workspace_id', $workspace->id)->get();
+        
 
         return Inertia::render('Profile/Edit', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
             'status' => session('status'),
-            'workspace' => $workspace,
+            'workspace' => $workspace->workspace,
+            'activeMembersStatus' => $activeMembersStatus
         ]);
     }
 

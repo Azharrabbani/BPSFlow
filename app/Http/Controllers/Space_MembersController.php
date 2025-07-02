@@ -11,31 +11,37 @@ use App\Models\Workspace_members;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use Inertia\Inertia;
 
 class Space_MembersController extends Controller
 {
     public function store(array $data, $status)
     {
-        $user = Auth::user();
-        if (!empty($data)) {
-
-            if ($status === 'private') {
-                $owner = Workspace_members::where('status', WorkspaceMembersStatus::OWNER)->first();
+        try {
+            $user = Auth::user();
+            if (!empty($data)) {
     
-                Space_members::create([
-                        'user_id' => $owner->id,
+                if ($status === 'private') {
+                    $owner = Workspace_members::where('status', WorkspaceMembersStatus::OWNER)->first();
+        
+                    Space_members::create([
+                            'user_id' => $owner->id,
+                            'space_id' => $data[0],
+                        ]);
+                }
+    
+                foreach($data[1] as $userId) {
+                    $user = User::where('id', $userId)->first();
+    
+                    Space_members::create([
+                        'user_id' => $user->id,
                         'space_id' => $data[0],
                     ]);
+                }
+    
             }
-
-            foreach($data[1] as $userId) {
-                $user = User::where('id', $userId)->first();
-
-                Space_members::create([
-                    'user_id' => $user->id,
-                    'space_id' => $data[0],
-                ]);
-            }
+        } catch(\Exception $e) {
+            return Inertia::render('Errors/ServerError');
 
         }
     }

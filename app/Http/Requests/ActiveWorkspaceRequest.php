@@ -4,14 +4,14 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class AsssignmentRequest extends FormRequest
+class ActiveWorkspaceRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        return true;
+        return false;
     }
 
     /**
@@ -22,13 +22,7 @@ class AsssignmentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'workspace' => ['required'],
-            'tasks_id' => ['required', 'integer'],
-            'space_member_id' => ['nullable', 'integer', 'max: 255'],
-            'name' => ['required', 'string'],
-            'priority' => ['nullable', 'string'],
-            'status' => ['required', 'string'],
-            'due_date' => ['nullable', 'date']
+            //
         ];
     }
 }

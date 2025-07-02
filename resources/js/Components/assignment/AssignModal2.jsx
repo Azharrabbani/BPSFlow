@@ -4,7 +4,7 @@ export default function AssignModal2( { open, onClose, children} ) {
         <div 
             onClick={onClose} 
             className={`
-                absolute top-[-50px] z-50 left-[350px] inset-0 flex justify-center items-center transition-colors ${open ? "visible" : "invisible"}
+                absolute top-[200px] z-50 inset-0 flex justify-center items-center transition-colors ${open ? "visible" : "invisible"}
             `}>
             
             {/* Modal page */}

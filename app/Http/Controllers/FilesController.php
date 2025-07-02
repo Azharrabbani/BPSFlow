@@ -10,45 +10,50 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
 
 class FilesController extends Controller
 {
    
     public function store(FilesRequest $request, Assignments $assignment)
     {        
-        $user = Auth::user();
-        
-        $members = $request['members'];
-
-        $files = $request->file('file'); 
-
-        $workspace = $request['workspace'];
-
-        $fileHashName = '';
-
-        $fileName = '';
-
-        $uploadedFiles = array();
-
-        
-        foreach($files as $file) {
-            $fileHashName = $file->hashName();
-            $fileName = $file->getClientOriginalName();    
-            $file->storeAs('files', $fileHashName);
+        try {
+            $user = Auth::user();
             
-            Files::create([
-                'assignment_id' => $assignment->id,
-                'originalName' => $fileName,
-                'generatedName' => $fileHashName,
-            ]);
+            $members = $request['members'];
+    
+            $files = $request->file('file'); 
+    
+            $workspace = $request['workspace'];
+    
+            $fileHashName = '';
+    
+            $fileName = '';
+    
+            $uploadedFiles = array();
+    
             
-            $uploadedFiles[] = $fileName;
-        }
-        
-        foreach($members as $member) {
-            if ($member['status'] === 'owner' || $member['status'] === 'admin') {
-                Mail::to($member['user']['email'])->send(new AssignmentNotification($workspace, $assignment->name, $uploadedFiles, $user, $member['user']['name']));
+            foreach($files as $file) {
+                $fileHashName = $file->hashName();
+                $fileName = $file->getClientOriginalName();    
+                $file->storeAs('files', $fileHashName);
+                
+                Files::create([
+                    'assignment_id' => $assignment->id,
+                    'originalName' => $fileName,
+                    'generatedName' => $fileHashName,
+                ]);
+                
+                $uploadedFiles[] = $fileName;
             }
+            
+            foreach($members as $member) {
+                if ($member['status'] === 'owner' || $member['status'] === 'admin') {
+                    Mail::to($member['user']['email'])->send(new AssignmentNotification($workspace['workspace']['name'], $assignment->name, $uploadedFiles, $user, $member['user']['name']));
+                }
+            }
+        } catch (\Exception $e) {
+            return Inertia::render('Errors/ServerError');
         }
 
     }
@@ -68,9 +73,6 @@ class FilesController extends Controller
     public function download(Files $files)
 {
     $path = 'files/' . $files['generatedName'];
-
-
-    
 
     if (Storage::exists($path)) {
         return Storage::download($path, $files['originalName']);

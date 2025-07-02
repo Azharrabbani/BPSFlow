@@ -55,7 +55,7 @@
   filter: brightness(1);
 }
 
-.login_register {
+.login_register, .createWorkspace {
   background-image: url("../assets/LoginRegister.jpg");
   background-size: cover;
   background-position: center;

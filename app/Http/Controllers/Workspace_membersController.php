@@ -19,33 +19,34 @@ class Workspace_membersController extends Controller
 
     public function index()
     {
-        $user = Auth::user();
-
-        $workspace = Workspace_members::where('user_id', $user->id)
-            ->whereHas('workspace', function($query) {
-                $query->where('status', WorkspaceStatus::ACTIVE);
-            })
-            ->first();
-        
-
-        if (!$workspace) {
-            return redirect()->back()->withErrors(['message' => 'No active workspace found.']);
+        try {
+            $user = Auth::user();
+            
+            $activeWorkspaces = new ActiveWorkspaceController();
+    
+            $workspace = $activeWorkspaces->getActiveWorkspace($user->id);
+            
+            if (!$workspace) {
+                return redirect()->back()->withErrors(['message' => 'No active workspace found.']);
+            }
+    
+            $members = Workspace_members::where('workspace_id', $workspace->workspace_id)
+                ->with('user')
+                ->get();
+    
+    
+            return Inertia::render('Workspace/Members', [
+                'workspace' => $workspace->workspace,
+                'members' => $members
+            ]);
+        } catch(\Exception $e) {
+            return Inertia::render('Errors/ServerError');
         }
-
-        $members = Workspace_members::where('workspace_id', $workspace->workspace_id)
-            ->with('user')
-            ->get();
-
-
-        return Inertia::render('Workspace/Members', [
-            'workspace' => $workspace->workspace,
-            'members' => $members
-        ]);
     }
 
 
     public function invite(Request $request)
-    {
+    {   
         try{
             $workspace_members = new Workspace_membersController();
 
@@ -76,7 +77,7 @@ class Workspace_membersController extends Controller
         
             return redirect()->route('workspace.members', ['workspace' => $request->workspace]);
         } catch(Exception $e) {
-            dd($e->getMessage());
+            return redirect()->back()->withErrors(['email' => $e->getMessage()]);
         }
         
     }
@@ -104,26 +105,33 @@ class Workspace_membersController extends Controller
 
     public function deleteMember(Workspace_members $member)
     {
-        $user = Auth::user();
+        try {
+            $user = Auth::user();
 
-        $member->delete();
-
-        $workspace = Workspace_members::where('user_id', $user->id)
-            ->whereHas('workspace', function($query) {
-                $query->where('status', WorkspaceStatus::ACTIVE);
-            })
-            ->first();
-
-         return redirect()->route('workspace.members', ['workspace' => $workspace]);
+            $activeWorkspaces = new ActiveWorkspaceController();
+    
+            $member->delete();
+    
+            $workspace = $activeWorkspaces->getActiveWorkspace($user->id);
+    
+             return redirect()->route('workspace.members', ['workspace' => $workspace->workspace_id]);
+        } catch (\Exception $e) {
+            return Inertia::render('Errors/ServerError');
+        }
     }
 
     public function createMember($user_id, $workspace, $role)
     {
-        Workspace_members::create([
-            'user_id' => $user_id,
-            'workspace_id' => $workspace,
-            'status' => $role, 
-        ]);
+        try {
+            Workspace_members::create([
+                'user_id' => $user_id,
+                'workspace_id' => $workspace,
+                'status' => $role, 
+            ]);
+
+        } catch (\Exception $e) {
+            return Inertia::render('Errors/ServerError');
+        }
     }
 
     public function getMembers($id)

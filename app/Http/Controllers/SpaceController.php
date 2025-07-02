@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Validation\ValidationException;
+use Inertia\Inertia;
 
 use function PHPUnit\Framework\isArray;
 
@@ -19,66 +20,72 @@ class SpaceController extends Controller
 {   
     public function store(SpaceRequest $request) 
     {
-        $user = Auth::user();
+        try {
+            $user = Auth::user();
 
-        $spaceData = $request->validated();
-        
-        $space = Space::create([
-            'workspace_id' => $spaceData['workspace_id'],
-            'name' => $spaceData['name'],
-            'status' => $spaceData['status'],
-        ]);
-        
-        if ($spaceData['status'] === 'private') {
-            $dataSpaceMember = [$space->id, $spaceData['members']];
-        } else {
-            $workspaceController = new WorkspaceController();
-            $workspaceMembersController = new Workspace_membersController();
-        
-            $activeWorkspace = $workspaceController->getActiveWorkspace($user->id);
-        
-            if (!$activeWorkspace) {
-                return back()->withErrors(['workspace' => 'Active workspace not found.']);
+            $spaceData = $request->validated();
+            
+            $space = Space::create([
+                'workspace_id' => $spaceData['workspace_id'],
+                'name' => $spaceData['name'],
+                'status' => $spaceData['status'],
+            ]);
+            
+            if ($spaceData['status'] === 'private') {
+                $dataSpaceMember = [$space->id, $spaceData['members']];
+            } else {
+                $workspaceController = new WorkspaceController();
+                $workspaceMembersController = new Workspace_membersController();
+            
+                $activeWorkspace = $workspaceController->getActiveWorkspace($user->id);
+            
+                if (!$activeWorkspace) {
+                    return back()->withErrors(['workspace' => 'Active workspace not found.']);
+                }
+            
+                $workspaceMembers = $workspaceMembersController->getMembers($activeWorkspace->workspace_id);
+    
+                $workspaceMemberIds = $workspaceMembers->pluck('user_id')->toArray();
+            
+                $dataSpaceMember = [$space->id, $workspaceMemberIds];
             }
-        
-            $workspaceMembers = $workspaceMembersController->getMembers($activeWorkspace->workspace_id);
+    
+            $space_member = new Space_MembersController();
+            $space_member->store($dataSpaceMember, $space->status);
+            return Redirect::route('dashboard');
 
-            $workspaceMemberIds = $workspaceMembers->pluck('user_id')->toArray();
-        
-            $dataSpaceMember = [$space->id, $workspaceMemberIds];
+
+        } catch(\Exception $e) {
+            return Inertia::render('Errors/ServerError');
         }
-
-        $space_member = new Space_MembersController();
-        $space_member->store($dataSpaceMember, $space->status);
-        return Redirect::route('dashboard');
     }
 
     public function update(SpaceRequest $request, Space $space)
     {
-        $data = $request->validated();
-
-        $space->update([
-            'name' => $data['name'],
-            'status' => $data['status'],
-        ]);
-
-        if (isset($data['members']) && is_array($data['members'])) {
-            foreach($data['members'] as $userId) {
-                Space_members::create([
-                    'space_id' => $space->id,
-                    'user_id' => $userId['id'],
-                ]);
+        try {
+            $data = $request->validated();
+    
+            $space->update([
+                'name' => $data['name'],
+                'status' => $data['status'],
+            ]);
+    
+            if (isset($data['members']) && is_array($data['members'])) {
+                foreach($data['members'] as $userId) {
+                    Space_members::create([
+                        'space_id' => $space->id,
+                        'user_id' => $userId['id'],
+                    ]);
+                }
             }
+        } catch(\Exception $e) {
+            return Inertia::render('Errors/ServerError');
         }
-
-        return Redirect::route('dashboard');
     }
 
     public function destroy(Space $space)
     {
         $space->delete();
-
-        return Redirect::route('dashboard');
     }
 
     public function getPublicSpaces($workspace_id) 
@@ -94,5 +101,5 @@ class SpaceController extends Controller
             })
         ->get();
     }
-    
+
 }

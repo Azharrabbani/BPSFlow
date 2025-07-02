@@ -34,6 +34,10 @@ Route::get('oauth/google/callback', [OauthController::class, 'handleProviderCall
 
 Route::get('/dashboard', [WorkspaceController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
 
+Route::get('/createWorkspace', function() {
+    return Inertia::render('Chart/Gant');
+})->name('gant');
+
 Route::middleware('auth')->group(function () {
     // Profile route
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -43,6 +47,7 @@ Route::middleware('auth')->group(function () {
     // Workspace route
     Route::post('/workspace', [WorkspaceController::class, 'store'])->name('workspace.store');
     Route::get('/workspace/{workspace}', [WorkspaceController::class, 'edit'])->name('workspace.edit');
+    Route::get('/workspace/{workspace}/workpace', [WorkspaceController::class, 'workspace'])->name('workspace.index');
     Route::post('/workspace/{workspace}', [WorkspaceController::class, 'update'])->name('workspace.update');
     Route::post('/workspace/{workspace}/switch', [WorkspaceController::class, 'switchWorkspace'])->name('workspace.switch');
     Route::get('/workspace/{workspace}/deleteWorkspace', [WorkspaceController::class, 'deleteConfirmation'])->name('workspace.deletePage');
@@ -74,6 +79,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/task', [TasksController::class, 'store'])->name('task.store');
     Route::get('/task/{project_id}/tasks', [TasksController::class, 'getTasks'])->name('task.get');
     Route::get('/task/{tasks}', [AssignmentsController::class, 'index'])->name('task.index');
+    // Route::get('/task/{tasks}/gantChart', [AssignmentsController::class, 'getGant'])->name('task.gantChart');
     Route::post('/task/{tasks}', [TasksController::class, 'update'])->name('task.update');
     Route::delete('/task/{tasks}', [TasksController::class, 'destroy'])->name('task.delete');
     
