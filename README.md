@@ -49,24 +49,37 @@ And several **external libraries** such as `wx-react-gantt`, `react-datepicker`,
 ```bash
 git clone https://github.com/username/bpsflow.git
 cd bpsflow
+```
 
 ### 2. Laravel instalation (Backend)
+```bash
 composer install
+```
 
 ### 3. React & Frontend instalation
+```bash
 npm install
+```
 
 ### 4. Copy File .env
+```bash
 cp .env.example .env
+```
 
 ### 5. Generate Key & Migrate DB
+```bash
 php artisan key:generate
 php artisan migrate
+```
 
 ### 6. Run Server
+```bash
 # Laravel
 php artisan serve
+```
 
 # React / Frontend
+```bash
 npm run dev
+```
 
