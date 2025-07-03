@@ -7,7 +7,7 @@
 
 ---
 
-### 🧭 Deskripsi
+### 🧭 Description
 
 **BPSFlow** is a web-based task management application designed to assist employees of the Badan Pusat Statistik (BPS) in efficiently managing projects and team workflows.
 
