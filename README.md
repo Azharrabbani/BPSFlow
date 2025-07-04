@@ -51,12 +51,12 @@ git clone https://github.com/username/bpsflow.git
 cd bpsflow
 ```
 
-### 2. Laravel instalation (Backend)
+### 2. Laravel installation (Backend)
 ```bash
 composer install
 ```
 
-### 3. React & Frontend instalation
+### 3. React & Frontend installation
 ```bash
 npm install
 ```
