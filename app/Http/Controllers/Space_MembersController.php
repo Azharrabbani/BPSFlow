@@ -15,17 +15,20 @@ use Inertia\Inertia;
 
 class Space_MembersController extends Controller
 {
-    public function store(array $data, $status)
+    public function store(array $data, $status, $workspace_id)
     {
         try {
             $user = Auth::user();
             if (!empty($data)) {
     
                 if ($status === 'private') {
-                    $owner = Workspace_members::where('status', WorkspaceMembersStatus::OWNER)->first();
+                    $owner = Workspace_members::where([
+                        'status' => WorkspaceMembersStatus::OWNER,
+                        'workspace_id' => $workspace_id
+                        ])->get();
         
                     Space_members::create([
-                            'user_id' => $owner->id,
+                            'user_id' => $owner[0]->user_id,
                             'space_id' => $data[0],
                         ]);
                 }

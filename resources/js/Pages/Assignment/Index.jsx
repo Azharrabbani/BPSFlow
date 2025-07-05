@@ -623,6 +623,10 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
                       <p>Gantt</p>
                   </div>
               </div>
+                  <PrimaryButton onClick={() => setAddAssignment(true)}>
+                    <AddOutlinedIcon />
+                    Assignment
+                  </PrimaryButton>
           </div>
           
 
@@ -1233,12 +1237,7 @@ export default function Index({ workspace, activeWorkspace, activeMembersStatus,
                 ))
                 
               ) :
-                <div className="flex justify-end">
-                  <PrimaryButton onClick={() => setAddAssignment(true)}>
-                    <AddOutlinedIcon />
-                    Assignment
-                  </PrimaryButton>
-                </div>
+                <></>
               }
             </>
           )}

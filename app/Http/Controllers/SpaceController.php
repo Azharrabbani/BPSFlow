@@ -37,13 +37,7 @@ class SpaceController extends Controller
                 $workspaceController = new WorkspaceController();
                 $workspaceMembersController = new Workspace_membersController();
             
-                $activeWorkspace = $workspaceController->getActiveWorkspace($user->id);
-            
-                if (!$activeWorkspace) {
-                    return back()->withErrors(['workspace' => 'Active workspace not found.']);
-                }
-            
-                $workspaceMembers = $workspaceMembersController->getMembers($activeWorkspace->workspace_id);
+                $workspaceMembers = $workspaceMembersController->getMembers($spaceData['workspace_id']);
     
                 $workspaceMemberIds = $workspaceMembers->pluck('user_id')->toArray();
             
@@ -51,9 +45,8 @@ class SpaceController extends Controller
             }
     
             $space_member = new Space_MembersController();
-            $space_member->store($dataSpaceMember, $space->status);
+            $space_member->store($dataSpaceMember, $space->status, $spaceData['workspace_id']);
             return Redirect::route('dashboard');
-
 
         } catch(\Exception $e) {
             return Inertia::render('Errors/ServerError');
@@ -98,8 +91,7 @@ class SpaceController extends Controller
        return Space::where(['workspace_id' => $workspace_id, 'status' => SpaceStatus::PRIVATE])
             ->whereHas('space_member', function($query) use ($user_id) {
                 $query->where('user_id', $user_id);
-            })
-        ->get();
+            })->get();
     }
 
 }

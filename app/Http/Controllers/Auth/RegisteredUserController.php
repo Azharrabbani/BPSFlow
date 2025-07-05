@@ -7,6 +7,7 @@ use App\Enums\WorkspaceStatus;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Workspace;
+use App\Models\ActiveWorkspace;
 use App\Models\Workspace_members;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -50,9 +51,13 @@ class RegisteredUserController extends Controller
 
         $workspace = Workspace::create([
             'name' => 'BPSFlow',
-            'status' => WorkspaceStatus::ACTIVE,
             'created_at' => date("Y-m-d H:i:s"),
             'updated_at' => date("Y-m-d H:i:s"),
+        ]);
+
+        ActiveWorkspace::create([
+            'user_id' => $user->id,
+            'workspace_id' => $workspace->id
         ]);
 
         Workspace_members::create([

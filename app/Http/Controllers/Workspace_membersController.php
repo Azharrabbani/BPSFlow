@@ -69,11 +69,6 @@ class Workspace_membersController extends Controller
             }
     
             $workspace_members->createMember($user->id, $request->workspace, $request->role);
-    
-            Workspace::where('status', WorkspaceStatus::ACTIVE)
-                ->where('id', '!=', $request->workspace)
-                ->update(['status' => WorkspaceStatus::INACTIVE]);
-            
         
             return redirect()->route('workspace.members', ['workspace' => $request->workspace]);
         } catch(Exception $e) {
@@ -94,13 +89,7 @@ class Workspace_membersController extends Controller
             'status' => $role['role']
         ]);
 
-        $workspace = Workspace_members::where('user_id', $user->id)
-            ->whereHas('workspace', function($query) {
-                $query->where('status', WorkspaceStatus::ACTIVE);
-            })
-            ->first();
-
-        return redirect()->route('workspace.members', ['workspace' => $workspace]);
+        return redirect()->route('workspace.members', ['workspace' => $request->workspace]);
     }
 
     public function deleteMember(Workspace_members $member)

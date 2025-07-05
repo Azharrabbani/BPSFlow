@@ -208,16 +208,18 @@ export default function Sidebar({ children, workspace, members, activeWorkspace,
     // Add new Workspace
     const addWorkspace  = (e) => {
         e.preventDefault();
-
+        location.reload();
         post(route('workspace.store'), {
             onSuccess: () => {
                 data.name = '';
+                data.members = [];
                 setWorkspace(false);
                 setOpenWorkplace(false);
             },
 
             onError: () => {
                 console.log('Gagal', errors.name);
+                data.members = [];
             },
 
             onFinish: () => {
@@ -233,9 +235,11 @@ export default function Sidebar({ children, workspace, members, activeWorkspace,
             onSuccess: () => {
                 reset();
                 setInviteModal(false);
+                data.members = [];
             },
             onError: () => {
                 console.log('Gagal', errors);
+                data.members = [];
             }
 
         });
@@ -247,6 +251,7 @@ export default function Sidebar({ children, workspace, members, activeWorkspace,
         post(route('workspace.switch', id), {
             onSuccess: () => {
                 setOpenWorkplace(false);
+                data.members = [];
             }
         });
     }
@@ -255,10 +260,12 @@ export default function Sidebar({ children, workspace, members, activeWorkspace,
     const addSpace = (e) => {
         e.preventDefault();
         data.workspace_id = activeWorkspace.workspace.id;
+        location.reload();
         post(route('space.store'),
         {
             onSuccess: () => {
                 data.name = '';
+                data.members = [];
                 data.workspace_id = '';
                 setOpen(false);
             },
@@ -302,6 +309,7 @@ export default function Sidebar({ children, workspace, members, activeWorkspace,
     // Delete Space Member
     const deleteMember = (e, space_member) => {
         e.preventDefault();
+        location.reload();
         destroy(route('space.deleteMember', space_member), {
              onSuccess: () => {
                 setSettingSpace(null);
@@ -313,7 +321,8 @@ export default function Sidebar({ children, workspace, members, activeWorkspace,
                 clear();
             },
             onError: () => {
-                console.log('Gagal Update Space')
+                console.log('Gagal Update Space');
+                data.members = [];
             },
             onFinish: () => {
                 console.log('finish')
@@ -322,8 +331,10 @@ export default function Sidebar({ children, workspace, members, activeWorkspace,
     }
 
     // Update Space
-    const updateSpace = (e, id) => {
+    const updateSpace = (e, id, workspaceId) => {
         e.preventDefault();
+        location.reload();
+        data.workspace_id = workspaceId.workspace_id;
         post(route('space.update', id), {
             onSuccess: () => {
                 setSettingSpace(null);
@@ -335,6 +346,7 @@ export default function Sidebar({ children, workspace, members, activeWorkspace,
             },
             onError: () => {
                 console.log('Gagal Update Space')
+                data.members = [];
             },
             onFinish: () => {
                 console.log('finish')
@@ -350,9 +362,11 @@ export default function Sidebar({ children, workspace, members, activeWorkspace,
         {
             onSuccess: () => {
                 setSpaceDeleteId(null);
+                data.members = [];
             },
             onError: () => {
                 console.log('Gagal Menghapus space');
+                data.members = [];
             },
             onFinish: () => {
                 console.log('selesai');
@@ -364,6 +378,7 @@ export default function Sidebar({ children, workspace, members, activeWorkspace,
     // Add Project
     const addProject = (e) => {
         e.preventDefault();
+        location.reload();
         post(route('project.store'),
         {
             onSuccess: () => {
@@ -371,6 +386,7 @@ export default function Sidebar({ children, workspace, members, activeWorkspace,
                 setProjectId(null);
                 data.name = '';
                 data.space_id = '';
+                data.members = [];
             },
             onError: () => {
                 data.members = [];
@@ -425,13 +441,16 @@ export default function Sidebar({ children, workspace, members, activeWorkspace,
     // Update Project
      const updateProject = (e, id) => {
         e.preventDefault();
+        location.reload();
         post(route('project.update', id), {
             onSuccess: () => {
                 setProjectsTrigger(prev => !prev); 
                 setEditProjectId(null);
+                data.members = [];
             },
             onError: () => {
-                console.log('Update Project Gagal')
+                console.log('Update Project Gagal');
+                data.members = [];
             },
             onFinish: () => {
                 console.log('selesai');
@@ -442,15 +461,17 @@ export default function Sidebar({ children, workspace, members, activeWorkspace,
     // Delete Project
     const deleteProject = (e, id) => {
         e.preventDefault();
-
+        location.reload();
         destroy(route('project.delete', id), {
             onSuccess: () => {
                 setProjectsTrigger(prev => !prev); 
                 setConfirmDeleteProject(null);
                 setProjectSetting(null);
+                data.members = [];
             },
             onError: () => {
                 console.log('Gagal Menghapus project');
+                data.members = [];
             },
             onFinish: () => {
                 console.log('selesai');
@@ -461,8 +482,18 @@ export default function Sidebar({ children, workspace, members, activeWorkspace,
     // Add Task
     const addTask = (e) => {
         e.preventDefault();
-
-        post(route('task.store'));
+        location.reload();
+        post(route('task.store'), {
+            onSuccess: () => {
+                data.members = [];
+            },
+            onError: () => {
+                data.members = [];
+            },
+            onSuccess: () => {
+                console.log('Selesai');
+            }
+        });
     }
 
     // Get Tasks
@@ -489,14 +520,16 @@ export default function Sidebar({ children, workspace, members, activeWorkspace,
     // Update Task
     const updateTask = (e, id) => {
         e.preventDefault();
-
+        location.reload();
         post(route('task.update', id), {
             onSuccess: () => {
                 setEditTask(null);
                 setToggleTasks(null);
+                data.members = [];
             },
             onError: () => {
                 console.log('Gagal update task');
+                data.members = [];
             },
             onFinish: () => {
                 console.log('selesai');
@@ -507,15 +540,17 @@ export default function Sidebar({ children, workspace, members, activeWorkspace,
     // Delete Task
     const deleteTask = (e, id) => {
         e.preventDefault();
-
+        location.reload();
         destroy(route('task.delete', id), {
             onSuccess: () => {
                 setToggleTasks(null);
                 setConfirmDeleteTask(null);
                 setTaskSetting(null);
+                data.members = [];
             },
             onError: () => {
                 console.log('Gagal Menghapus task');
+                data.members = [];
             },
             onFinish: () => {
                 console.log('selesai');
@@ -561,6 +596,9 @@ export default function Sidebar({ children, workspace, members, activeWorkspace,
     function clear(stateCall) {
         stateCall(null);
         setData('name', '');
+        setShowSelectMember(false);
+        setData('status', 'public');
+        data.members = [];
         clearErrors();
     }
 
@@ -599,7 +637,7 @@ export default function Sidebar({ children, workspace, members, activeWorkspace,
                 {/* Sidebar Container */}
                 {isSidebarOpen && (
                     <nav
-                        className={`fixed md:relative z-20 w-[290px] bg-sky-600 min-h-screen max-h-screen overflow-y-auto overflow-x-hidden md:overflow-y-auto md:overflow-x-hidden transition-transform duration-300`}
+                        className={`fixed md:relative z-20 w-[305px] bg-sky-600 min-h-screen max-h-screen overflow-y-auto overflow-x-hidden md:overflow-y-auto md:overflow-x-hidden transition-transform duration-300`}
                     >
                         {/* Sidebar Header */}
                         <div 
@@ -782,16 +820,19 @@ export default function Sidebar({ children, workspace, members, activeWorkspace,
                                     : 
                                     <>
                                             <p className="text-sm text-gray-800">Spaces</p>
-                                            <div className="ml-[163px] space-x-2">
+                                            <div className="ml-[163px] flex justify-between space-x-2">
                                                 <SearchOutlinedIcon 
                                                         className="hover:text-blue-500 rounded-md cursor-pointer"
                                                         onClick={() => handleClick_SearchSpace()}
                                                     />
                                                 {/* <MoreHorizOutlinedIcon className="hover:text-blue-500 rounded-md cursor-pointer"/> */}
-                                                <AddOutlinedIcon
-                                                    onClick={() => setOpen(true)} 
-                                                    className="hover:text-green-600 rounded-md cursor-pointer"
-                                                />
+
+                                                {isAuthorize.includes(currentUserStatus) && (
+                                                    <AddOutlinedIcon
+                                                        onClick={() => setOpen(true)} 
+                                                        className="hover:text-green-600 rounded-md cursor-pointer"
+                                                    />
+                                                )} 
                                             </div>
                                     </>
                                 } 
@@ -828,16 +869,17 @@ export default function Sidebar({ children, workspace, members, activeWorkspace,
                                                     <h2>Buat Private</h2>
                                                     <p className="opacity-50 pr-[50px]">Buat untuk hanya member yang anda izinkan bisa akses</p>
                                                 </div>
-                                                <label class="switch relative top-3">
-                                                    <input type="checkbox"/>
-                                                    <span 
-                                                        class="slider" 
-                                                        onClick={() => {
-                                                            setData('status', 'private');
-                                                            setShowSelectMember(prev => !prev);
-                                                        }}
-                                                    >
-                                                    </span>
+                                                <label className="switch relative top-3">
+                                                    <input
+                                                    type="checkbox"
+                                                    checked={data.status === 'private'}
+                                                    onChange={(e) => {
+                                                        const isChecked = e.target.checked;
+                                                        setData('status', isChecked ? 'private' : 'public');
+                                                        setShowSelectMember(isChecked ? true : false);
+                                                    }}
+                                                    />
+                                                    <span className="slider"></span>
                                                 </label>
                                             </div>
 
@@ -877,6 +919,7 @@ export default function Sidebar({ children, workspace, members, activeWorkspace,
                                                         .map((data) => (
                                                             <div key={data.id}>
                                                                 {data.status === 'owner' ? (
+                                                                    selectedUsers.includes(data.user),
                                                                     <div 
                                                                         className="p-4 rounded-lg cursor-default bg-slate-100 mt-3"
                                                                         
@@ -984,23 +1027,28 @@ export default function Sidebar({ children, workspace, members, activeWorkspace,
                                                     <div className="flex px-3 gap-2">
                                                         {toggleWorkspaceMore === space.id && (
                                                             <>
-                                                                <SettingsIcon 
-                                                                    onClick={(e) => {
-                                                                        setSettingSpace(space.id);
-                                                                        setEditingSpace(space);
-                                                                        getSpaceMembers(e, space);
-                                                                        setData('status', space.status);
-                                                                        setData('name', space.name);
-                                                                    }}
-                                                                    className="w-2 hover:bg-[#19324928] rounded-md cursor-pointer"
-                                                                />
-
                                                                 {isAuthorize.includes(currentUserStatus) && (
-                                                                    <HighlightOffIcon
-                                                                        onClick={() => setSpaceDeleteId(space)}
-                                                                        className="w-2 hover:bg-[#19324928] rounded-md cursor-pointer"
-                                                                    />
+                                                                    <>
+                                                                        <SettingsIcon 
+                                                                            onClick={(e) => {
+                                                                                setSettingSpace(space.id);
+                                                                                setEditingSpace(space);
+                                                                                getSpaceMembers(e, space);
+                                                                                setData('status', space.status);
+                                                                                setData('name', space.name);
+                                                                            }}
+                                                                            className="w-2 hover:bg-[#19324928] rounded-md cursor-pointer"
+                                                                        />
+        
+                                                                        
+                                                                        <HighlightOffIcon
+                                                                            onClick={() => setSpaceDeleteId(space)}
+                                                                            className="w-2 hover:bg-[#19324928] rounded-md cursor-pointer"
+                                                                        />
+                                                                    </>
                                                                 )}
+
+                                                                
                                                             </>
                                                         )}
                                                         <AddOutlinedIcon 
@@ -1032,7 +1080,7 @@ export default function Sidebar({ children, workspace, members, activeWorkspace,
                                                                     <p className="opacity-50">Space mewakili bagian, subbagian, atau kelompok kerja, lengkap dengan daftar tugas, alur pelaksanaan</p>
                                                                 </div>
 
-                                                                <form onSubmit={(e) => updateSpace(e, space)}>
+                                                                <form onSubmit={(e) => updateSpace(e, space.id, activeWorkspace)}>
                                                                     <div className="flex flex-col mt-4">
                                                                         <label htmlFor="spaceInput" className="mb-1">Space Name</label>
                                                                         <TextInput 
@@ -1489,10 +1537,6 @@ export default function Sidebar({ children, workspace, members, activeWorkspace,
                                                         >
                                                             <DeleteIcon/>
                                                             <p>Delete</p>
-                                                        </div>
-                                                        <div className="flex space-x-1 hover:bg-sky-300 hover:text-white p-2 rounded-lg cursor-pointer transition-colors duration-200">
-                                                            <DriveFileMoveOutlineIcon/>
-                                                            <p>Pindahkan</p>
                                                         </div>
                                                     </div>
                                                 ) : 
