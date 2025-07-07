@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\WorkspaceMembersStatus;
 use App\Enums\WorkspaceStatus;
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Models\Workspace;
@@ -28,8 +29,7 @@ class ProfileController extends Controller
         
         $workspace = $activeWorkspaces->getActiveWorkspace($user->id);
 
-        $activeMembersStatus = Workspace_members::where('workspace_id', $workspace->id)->get();
-        
+        $activeMembersStatus = Workspace_members::where('workspace_id', $workspace->workspace_id)->get();
 
         return Inertia::render('Profile/Edit', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
@@ -85,7 +85,17 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
-        Storage::delete($user->photo);
+        $ownedWorkspaces = Workspace_members::where('user_id', $user->id)
+        ->where('status', WorkspaceMembersStatus::OWNER)
+        ->pluck('workspace_id');
+
+        foreach ($ownedWorkspaces as $workspaceId) {
+            Workspace::where('id', $workspaceId)->delete();
+        }   
+
+        if ($user->photo) {
+            Storage::delete($user->photo);
+        }
 
         Auth::logout();
 

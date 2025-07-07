@@ -4,17 +4,44 @@ namespace App\Http\Controllers;
 
 use App\Models\ActiveWorkspace;
 use App\Models\Workspace;
+use App\Models\Workspace_members;
 use Illuminate\Http\Request;
 
 class ActiveWorkspaceController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+   
     public function getActiveWorkspace($userId)
     {
-        return ActiveWorkspace::where('user_id', $userId)->with('workspace')->firstOrFail();
+        $active = ActiveWorkspace::where('user_id', $userId)->firstOrFail();
+
+        if (!$active) {
+            return null;
+        }
+
+        $isMember = Workspace_members::where('user_id', $userId)
+            ->where('workspace_id', $active->workspace_id)
+            ->exists();
+
+        if (!$isMember) {
+            
+            $newMembership = Workspace_members::where('user_id', $userId)->first();
+
+            if ($newMembership) {
+                
+                $active->update([
+                    'workspace_id' => $newMembership->workspace_id,
+                ]);
+
+                return ActiveWorkspace::where('user_id', $userId)->with('workspace')->first();
+            } else {
+                $active->delete();
+                return null;
+            }
+        }
+
+        return ActiveWorkspace::where('user_id', $userId)->with('workspace')->first();
     }
+
 
     public function store($userId, $workspaceId)
     {

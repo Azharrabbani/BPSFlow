@@ -52,23 +52,7 @@ class WorkspaceController extends Controller
             $members = $workspace_members->getMembers($activeMembership->workspace_id);
 
             if (!$activeMembership) {
-                $firstInactive = Workspace_members::where('user_id', $userId)
-                    ->whereHas('workspace', function ($query) {
-                        $query->where('status', WorkspaceStatus::INACTIVE);
-                    })
-                    ->first();
-        
-                if ($firstInactive) {
-                    $firstInactive->workspace->update([
-                        'status' => WorkspaceStatus::ACTIVE
-                    ]);
-        
-                    $activeMembership = Workspace_members::where('user_id', $userId)
-                        ->whereHas('workspace', function ($query) {
-                            $query->where('status', WorkspaceStatus::ACTIVE);
-                        })
-                        ->first();
-                }
+                return Inertia::render('Workspace/CreateWorkspace');
             }
         
             if (!$activeMembership) {

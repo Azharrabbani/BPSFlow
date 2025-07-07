@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\WorkspaceMembersStatus;
 use App\Enums\WorkspaceStatus;
+use App\Models\ActiveWorkspace;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Models\Workspace_members;
@@ -50,6 +51,13 @@ class OauthController extends Controller
                     'status' => WorkspaceMembersStatus::OWNER,
                     'created_at' => date("Y-m-d H:i:s"),
                     'updated_at' => date("Y-m-d H:i:s"),
+                ]);
+
+                ActiveWorkspace::create([
+                    'user_id' => $newUser->id,
+                    'workspace_id' => $workspace->id,
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
 
                 Auth::login($newUser);

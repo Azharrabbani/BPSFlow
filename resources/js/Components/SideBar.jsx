@@ -50,6 +50,8 @@ export default function Sidebar({ children, workspace, members, activeWorkspace,
 
     const inactiveWorkspaces = workspace.flat();
 
+    console.log(inactiveWorkspaces);
+
     const workspaceMembers = activeMembersStatus.length;
 
     const flatSpaces = getWorkspaceSpaces.flat();
@@ -718,7 +720,9 @@ export default function Sidebar({ children, workspace, members, activeWorkspace,
                                     <div className="flex mt-3 flex-col max-h-[200px] overflow-y-auto">
                                         {inactiveWorkspaces && inactiveWorkspaces.length > 0 ? (
                                             inactiveWorkspaces.filter((item) => {
-                                                return search.toLowerCase() === '' ? item : item.name.toLowerCase().includes(search); 
+                                                 return search.toLowerCase() === ''
+                                                ? true
+                                                : item.workspace?.name?.toLowerCase().includes(search.toLowerCase());
                                             })
                                             .map((data) => (
                                                 <button

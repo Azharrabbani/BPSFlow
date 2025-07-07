@@ -8,6 +8,8 @@ use App\Models\User;
 use App\Models\Workspace;
 use App\Models\Workspace_members;
 use App\Http\Requests\WorkspaceMemberRequest;
+use App\Models\Space;
+use App\Models\Space_members;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -69,6 +71,19 @@ class Workspace_membersController extends Controller
             }
     
             $workspace_members->createMember($user->id, $request->workspace, $request->role);
+
+            $publicSpaces = Space::where([
+                'workspace_id' => $request->workspace,
+                'status' => 'public'
+            ])->get();
+
+            foreach ($publicSpaces as $space) {
+                Space_members::create([
+                    'space_id' => $space->id,
+                    'user_id' => $user->id,
+                ]);
+            }
+
         
             return redirect()->route('workspace.members', ['workspace' => $request->workspace]);
         } catch(Exception $e) {
@@ -98,6 +113,14 @@ class Workspace_membersController extends Controller
             $user = Auth::user();
 
             $activeWorkspaces = new ActiveWorkspaceController();
+
+            
+            $spaceIds = Space::where('workspace_id', $member->workspace_id)->pluck('id');
+
+            
+            Space_members::where('user_id', $member->user_id)
+                   ->whereIn('space_id', $spaceIds)
+                   ->delete();
     
             $member->delete();
     

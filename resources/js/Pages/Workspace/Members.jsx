@@ -133,42 +133,22 @@ export default function Members( { workspace, members } ) {
                 <h1 className="text-3xl"><span className="text-blue-500">{workspace.name}'s</span> Members</h1>
 
                 <div class="relative mt-5">
-                    <button class="absolute left-2 -translate-y-1/2 top-1/2 p-1">
-                        <svg
-                        width="17"
-                        height="16"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                        role="img"
-                        aria-labelledby="search"
-                        class="w-5 h-5 text-gray-700"
-                        >
-                        <path
-                            d="M7.667 12.667A5.333 5.333 0 107.667 2a5.333 5.333 0 000 10.667zM14.334 14l-2.9-2.9"
-                            stroke="currentColor"
-                            stroke-width="1.333"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        ></path>
-                        </svg>
-                    </button>
-                    <div className="flex space-x-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-3 sm:space-y-0 w-full">
                         <input
-                            class="input rounded-full px-8 py-3 border-2 border-transparent focus:outline-none focus:border-blue-500 placeholder-gray-400 transition-all duration-300 shadow-md w-96"
+                            className="w-full sm:w-96 rounded-full px-4 sm:px-8 py-3 border-2 border-transparent focus:outline-none focus:border-blue-500 placeholder-gray-400 transition-all duration-300 shadow-md"
                             placeholder="Search..."
                             required=""
                             type="text"
                             onChange={(e) => setSearch(e.target.value)}
                         />
                         
-
                         <button 
                             onClick={() => setOpen(true)}
-                            className="flex items-center bg-sky-500 hover:bg-sky-600 rounded-lg text-white font-semibold overflow-hidden transition-colors duration-200"
+                            className="flex items-center justify-center bg-sky-500 hover:bg-sky-600 rounded-lg text-white font-semibold transition-colors duration-200 px-4 py-2 w-full sm:w-auto"
                         >
-                            <div className="flex items-center gap-2 px-3 py-2">
+                            <div className="flex items-center gap-2">
                             <PersonAddAltIcon className="w-5 h-5"/>
-                            <div className="w-px h-5 bg-white opacity-50"/>
+                            <div className="hidden sm:block w-px h-5 bg-white opacity-50"/>
                             </div>
                             <span className="px-3 py-2">Invite</span>
                         </button>
@@ -277,7 +257,7 @@ export default function Members( { workspace, members } ) {
                                             <td className="relative p-3 text-sm text-gray-700 whitespace-nowrap text-center">
                                                 {member.status !== 'owner' 
                                                     ? <SettingsIcon 
-                                                        className="hover:opacity-50 cursor-pointer" 
+                                                        className="hover:opacity-50 z-0 cursor-pointer" 
                                                         onClick={() => togglePopup(member.id)} 
                                                     />
                                                     : <p>...</p>  

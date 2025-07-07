@@ -13,7 +13,7 @@ import { useEffect, useState } from 'react';
 
 export default function EditWorkspace({ workspace, children, activeMembersStatus }) {
     const user = usePage().props.auth.user;
-
+    
     const currentUserStatus = activeMembersStatus.find(m => m.user_id === user.id).status;
 
     const [isSideBarOpen, setIsSideBarOpen] = useState(false);
